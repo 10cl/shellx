@@ -119,4 +119,15 @@ public class ShellXWebSocketServer {
             e.printStackTrace();
         }
     }
+
+    public void execute(String command) {
+        LOGGER.d("execute :" + command);
+
+        try {
+           mPty.focusShellInput(command);
+           LOGGER.d("focus input: " + command);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

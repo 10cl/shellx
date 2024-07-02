@@ -14,6 +14,8 @@ import org.nanohttpd.protocols.http.response.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import static org.nanohttpd.protocols.http.response.Response.newFixedLengthResponse;
 import static org.nanohttpd.protocols.http.response.Status.INTERNAL_ERROR;
@@ -73,6 +75,16 @@ public class ShellXHttpServer extends NanoHTTPD {
             return newFixedLengthResponse(OK, "application/json", jsonObject.toString());
         }else if (uri.equals("/stop")){
             ShellXWebSocketServer.getInstance(9090, false).destroy();
+        }else if (uri.equals("/shell")){
+            Map<String, List<String>> params = session.getParameters();
+            if (params.size() > 0){
+                List<String> command = params.get("command");
+                if (command != null && !command.isEmpty())
+                    ShellXWebSocketServer.getInstance(9090, false).execute(command.get(0));
+
+                LOGGER.d("parameters: " + session.getParameters());
+            }
+            return newFixedLengthResponse(OK, "application/json", "{result: 'success'}");
         }
 
         File file = new File(STATIC_DIR + uri);

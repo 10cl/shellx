@@ -13,6 +13,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -61,15 +62,18 @@ public class PtyClient {
         ptyModule.connect();
         ptyModuleHashMap.put(sid, ptyModule);
         resizePty(sid, x, y, 30, 100);
+        LOGGER.d(TAG, "create pty sid: " + sid);
     }
 
     public void resizePty(String sid, int x, int y, int row, int col){
         int widthPx = row*16;
         int heightPx = col*16;
 
-        ptyModuleHashMap.get(sid).resize(col, row, widthPx, heightPx);
-        sendResizeInfo(sid, x, y, row, col);
-
+        PtyModule ptymodule = ptyModuleHashMap.get(sid);
+        if (ptymodule != null){
+            ptymodule.resize(col, row, widthPx, heightPx);
+            sendResizeInfo(sid, x, y, row, col);
+        }
     }
 
     private void sendResizeInfo(String sid, int x, int y, int rows, int cols) {
@@ -143,12 +147,16 @@ public class PtyClient {
 
     public void input(String sid, byte[] input) {
         try {
-            if (ptyModuleHashMap.get(sid) != null){
-                OutputStream inputProc = ptyModuleHashMap.get(sid).getOutputStream();
+            PtyModule ptyModule = ptyModuleHashMap.get(sid);
+            if (ptyModule != null){
+                OutputStream inputProc = ptyModule.getOutputStream();
                 if (inputProc != null){
+                    LOGGER.d("pty input: " + Arrays.toString(input));
                     inputProc.write(input);
                     inputProc.flush();
                 }
+            }else{
+                LOGGER.d("sid: " + sid + " not found");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -383,5 +391,9 @@ public class PtyClient {
             mShells.remove(i);
             i--; // Adjust the index as we removed an element
         }
+    }
+
+    public void focusShellInput(String command) {
+        sendCborObj("input", command);
     }
 }
