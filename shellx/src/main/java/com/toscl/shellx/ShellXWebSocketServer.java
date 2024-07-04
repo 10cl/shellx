@@ -51,6 +51,9 @@ public class ShellXWebSocketServer {
 
     public void createWsServer(){
         LOGGER.d("create ws server");
+        if (mWebSocketServer != null) {
+            mWebSocketServer.close();
+        }
         mWebSocketServer = nano ? new NanoWSDWebServer(port, mPty) : new JavaWebServer(port, mPty);
         createPty(mWebSocketServer, true);
         mWebSocketServer.start();
@@ -73,15 +76,8 @@ public class ShellXWebSocketServer {
 
     public void reconnect(){
         String httpLink = System.getProperty("persist.toscl.shellx.link");
-        LOGGER.d("start, httpLink: " + httpLink);
-        if (mWebSocketServer != null) {
-            mWebSocketServer.close();
-        }
-        if ("0".equals(httpLink)){
-            ShellXWebSocketServer.getInstance(9090, false).createWsServer();
-            ShellXWebSocketServer.getInstance(9090, false).setPtyReconnect();
-        }else{
-            createWsClient(System.getProperty("persist.toscl.shellx.link"), false);
+        if (!"0".equals(httpLink)){
+            createWsClient(httpLink, false);
         }
     }
 
@@ -96,6 +92,9 @@ public class ShellXWebSocketServer {
             wsUrl = wsUrl.replace("/s/", "/api/t/");
         }
         try {
+            if (mWebSocketServer != null) {
+                mWebSocketServer.close();
+            }
             mWebSocketServer = new RemoteWsClient(mPty, wsUrl);
             createPty(mWebSocketServer, load);
             mWebSocketServer.start();
@@ -108,13 +107,15 @@ public class ShellXWebSocketServer {
         LOGGER.d("destroy");
 
         try {
-            if (mWebSocketServer != null){
-                mWebSocketServer.destroy();
-            }
-            if (mShellXHttpServer != null){
+            if (mShellXHttpServer != null) {
                 mShellXHttpServer.stop();
             }
             Util.executeShell("am force-stop com.toscl.shellx");
+
+            if (mWebSocketServer != null) {
+                mWebSocketServer.close();
+                mWebSocketServer.destroy();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
