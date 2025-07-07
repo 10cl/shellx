@@ -14,11 +14,11 @@ jobs:
         os: ['windows-latest', 'ubuntu-latest', 'macos-latest']
 
     env:
-      MAIN_PY_FILE: 'main.py'  # Define the path to your main.py file here
+      MAIN_PY_FILE: 'main.py'  # 定义主 Python 文件路径
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -35,31 +35,28 @@ jobs:
         pip install pyinstaller
       working-directory: ./
 
-    - name: Build executable
+    - name: Clean previous builds
       run: |
-        pyinstaller ${{ env.MAIN_PY_FILE }}
+        rm -rf dist/ build/
+      shell: bash
       working-directory: ./
 
-    - name: Create Artifact (Windows)
-      if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v3
-      with:
-        name: windows-executables
-        path: dist/
+    - name: Build executable
+      run: |
+        pyinstaller --clean --onefile ${{ env.MAIN_PY_FILE }}
+      working-directory: ./
 
-    - name: Create Artifact (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v3
-      with:
-        name: linux-executables
-        path: dist/
+    - name: Verify build output
+      run: |
+        test -d dist || { echo "Build failed: dist directory not found"; exit 1; }
+        ls -R dist/
+      shell: bash
+      working-directory: ./
 
-    - name: Create Artifact (macOS)
-      if: matrix.os == 'macos-latest'
-      uses: actions/upload-artifact@v3
+    - name: Upload executable artifacts
+      uses: actions/upload-artifact@v4
       with:
-        name: macos-executables
+        name: ${{ matrix.os }}-executable
         path: dist/
-
-    - name: List files in dist folder
-      run: ls -R ./dist/
+        retention-days: 7
+        if-no-files-found: error
