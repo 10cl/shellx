@@ -12,14 +12,14 @@ on:
 
 env:
   APP_NAME: 'shellx'
-  # 版本优先级：手动输入 > Git 分支名 > Git SHA前8位
+  # Version priority: manual input > Git branch name > first 8 chars of Git SHA
   VERSION: ${{ github.event.inputs.version || github.ref_name || github.sha }}
-  ADB_BASE_DIR: 'deps/work/install'  # ADB 最终路径基础目录
-  MAIN_PY_FILE: 'deps/main.py'       # 主程序入口
+  ADB_BASE_DIR: 'deps/work/install'  # Base directory for final ADB path
+  MAIN_PY_FILE: 'deps/main.py'       # Main program entry point
 
 
 jobs:
-  # -------------------------- 构建阶段：按系统+架构生成中间产物 --------------------------
+  # -------------------------- Build Stage: Generate intermediate artifacts by OS + architecture --------------------------
   build-windows-x86:
     runs-on: windows-latest
     steps:
@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pyinstaller
-          choco install zip -y  # 安装打包工具
+          choco install zip -y  # Install packaging tool
         shell: pwsh
 
       - name: Clean previous builds
@@ -55,7 +55,7 @@ jobs:
 
       - name: Verify ADB binary
         run: |
-          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb.exe" ]; then
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb-windows/adb.exe" ]; then
             echo "ADB binary not found!" && exit 1
           fi
           ls -l ${{ env.ADB_BASE_DIR }}
@@ -68,7 +68,7 @@ jobs:
 
       - name: Copy ADB to dist
         run: |
-          cp ${{ env.ADB_BASE_DIR }}/adb.exe dist/adb.exe
+          cp ${{ env.ADB_BASE_DIR }}/adb-windows/adb.exe dist/adb.exe
           ls -l dist/
         shell: bash
 
@@ -115,7 +115,7 @@ jobs:
 
       - name: Verify ADB binary
         run: |
-          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb.exe" ]; then
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb-windows/adb.exe" ]; then
             echo "ADB binary not found!" && exit 1
           fi
         shell: bash
@@ -127,7 +127,7 @@ jobs:
 
       - name: Copy ADB to dist
         run: |
-          cp ${{ env.ADB_BASE_DIR }}/adb.exe dist/adb.exe
+          cp ${{ env.ADB_BASE_DIR }}/adb-windows/adb.exe dist/adb.exe
         shell: bash
 
       - name: Upload intermediate artifact
@@ -192,7 +192,7 @@ jobs:
 
 
   build-macos-x86_64:
-    runs-on: macos-13  # x86_64 架构
+    runs-on: macos-13  # x86_64 architecture
     steps:
       - name: Check architecture
         run: |
@@ -297,7 +297,7 @@ jobs:
           retention-days: 1
 
 
-  # -------------------------- 打包阶段：整合中间产物并生成最终压缩包 --------------------------
+  # -------------------------- Packaging Stage: Integrate intermediate artifacts and generate final zip packages --------------------------
   package-win-x86:
     needs: build-windows-x86
     runs-on: ubuntu-latest
@@ -427,7 +427,7 @@ jobs:
           retention-days: 7
 
 
-  # -------------------------- 汇总发布：收集所有最终产物 --------------------------
+  # -------------------------- Release Summary: Collect all final artifacts --------------------------
   release:
     needs:
       - package-win-x86
@@ -437,8 +437,8 @@ jobs:
       - package-macos-aarch64
     runs-on: ubuntu-latest
     steps:
-      - name: Install wget for Ubuntu
-        run: sudo apt-get update && sudo apt-get install -y wget
+      - name: Install wget and coreutils for Ubuntu
+        run: sudo apt-get update && sudo apt-get install -y wget coreutils
 
       - name: Download all packages
         uses: actions/download-artifact@v4
@@ -454,6 +454,12 @@ jobs:
             echo "b241878e6ec20650b041bf715ea05f7d5dc73bd24529464bd9cf68946e3132bd  platform-tools_r36.0.0-darwin.zip" > platform-tools_r36.0.0-darwin.zip.sha256.expected
             echo "platform-tools_r36.0.0-darwin.zip: verifying checksum..."
             sha256sum -c platform-tools_r36.0.0-darwin.zip.sha256.expected || (echo "Checksum verification failed for platform-tools_r36.0.0-darwin.zip" && exit 1)
+          fi
+          # Also verify known checksums for platform-tools_r36.0.0-win.zip if present
+          if [ -f "platform-tools_r36.0.0-win.zip" ]; then
+            echo "24bd8bebbbb58b9870db202b5c6775c4a49992632021c60750d9d8ec8179d5f0  platform-tools_r36.0.0-win.zip" > platform-tools_r36.0.0-win.zip.sha256.expected
+            echo "platform-tools_r36.0.0-win.zip: verifying checksum..."
+            sha256sum -c platform-tools_r36.0.0-win.zip.sha256.expected || (echo "Checksum verification failed for platform-tools_r36.0.0-win.zip" && exit 1)
           fi
 
       - name: Upload all releases
