@@ -18,19 +18,16 @@ jobs:
             ext: .exe
             adb_script: adb_windows.sh
             adb_binary: adb.exe
-            shell: bash
           - os: ubuntu-latest
             system: linux
             ext: ''
             adb_script: adb_linux.sh
             adb_binary: adb-linux
-            shell: bash
           - os: macos-latest
             system: macos
             ext: ''
             adb_script: adb_macos.sh
             adb_binary: adb-macos
-            shell: bash
 
     env:
       MAIN_PY_FILE: 'deps/main.py'
@@ -62,7 +59,7 @@ jobs:
       run: |
         chmod +x deps/${{ matrix.adb_script }}
         deps/${{ matrix.adb_script }}
-      shell: ${{ matrix.shell }}
+      shell: bash
       working-directory: ./
 
     - name: Verify ADB binary
@@ -89,7 +86,7 @@ jobs:
     - name: Create versioned zip package
       id: create_zip
       run: |
-        ZIP_NAME="${{ env.APP_NAME }}-${{ matrix.system }}-${{ env.VERSION:0:8 }}.zip"
+        ZIP_NAME="${{ env.APP_NAME }}-${{ matrix.system }}-${GITHUB_SHA::8}.zip"
         cd dist
         zip -r ../${ZIP_NAME} ./*
         cd ..
