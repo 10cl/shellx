@@ -12,9 +12,31 @@ jobs:
       fail-fast: false
       matrix:
         os: ['windows-latest', 'ubuntu-latest', 'macos-latest']
+        include:
+          - os: windows-latest
+            system: win
+            ext: .exe
+            adb_script: adb_windows.sh
+            adb_binary: adb.exe
+            shell: bash
+          - os: ubuntu-latest
+            system: linux
+            ext: ''
+            adb_script: adb_linux.sh
+            adb_binary: adb-linux
+            shell: bash
+          - os: macos-latest
+            system: macos
+            ext: ''
+            adb_script: adb_macos.sh
+            adb_binary: adb-macos
+            shell: bash
 
     env:
       MAIN_PY_FILE: 'deps/main.py'
+      APP_NAME: 'shellx'
+      VERSION: '${{ github.sha }}'
+      ADB_DIR: 'deps/work/install'
 
     steps:
     - name: Checkout code
@@ -32,26 +54,54 @@ jobs:
 
     - name: Clean previous builds
       run: |
-        rm -rf dist/ build/
+        rm -rf dist/ build/ ${{ env.ADB_DIR }}
       shell: bash
       working-directory: ./
 
-    - name: Build executable
+    - name: Execute ADB script
       run: |
-        pyinstaller --clean --onefile ${{ env.MAIN_PY_FILE }}
+        chmod +x deps/${{ matrix.adb_script }}
+        deps/${{ matrix.adb_script }}
+      shell: ${{ matrix.shell }}
       working-directory: ./
 
-    - name: Verify build output
+    - name: Verify ADB binary
       run: |
-        test -d dist || { echo "Build failed: dist directory not found"; exit 1; }
-        ls -R dist/
+        test -f ${{ env.ADB_DIR }}/${{ matrix.adb_binary }} || { echo "ADB binary not found!"; exit 1; }
+        ls -l ${{ env.ADB_DIR }}
       shell: bash
       working-directory: ./
 
-    - name: Upload executable artifacts
+    - name: Build executable with custom name
+      run: |
+        pyinstaller --clean --onefile \
+          --name ${{ env.APP_NAME }}${{ matrix.ext }} \
+          ${{ env.MAIN_PY_FILE }}
+      working-directory: ./
+
+    - name: Copy ADB binary to dist directory
+      run: |
+        cp ${{ env.ADB_DIR }}/${{ matrix.adb_binary }} dist/adb${{ matrix.ext }}
+        ls -l dist/
+      shell: bash
+      working-directory: ./
+
+    - name: Create versioned zip package
+      id: create_zip
+      run: |
+        ZIP_NAME="${{ env.APP_NAME }}-${{ matrix.system }}-${{ env.VERSION:0:8 }}.zip"
+        cd dist
+        zip -r ../${ZIP_NAME} ./*
+        cd ..
+        echo "zip_name=${ZIP_NAME}" >> $GITHUB_ENV
+        echo "artifact_path=$(realpath ${ZIP_NAME})" >> $GITHUB_ENV
+      shell: bash
+      working-directory: ./
+
+    - name: Upload versioned zip artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.os }}-executable
-        path: dist/
+        name: ${{ env.APP_NAME }}-${{ matrix.system }}
+        path: ${{ env.artifact_path }}
         retention-days: 7
         if-no-files-found: error
