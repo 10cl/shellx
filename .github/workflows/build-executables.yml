@@ -4,101 +4,444 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version name (e.g., v1.0.0, default: Git SHA)'
+        required: false
+
+env:
+  APP_NAME: 'shellx'
+  # 版本优先级：手动输入 > Git 分支名 > Git SHA前8位
+  VERSION: ${{ github.event.inputs.version || github.ref_name || github.sha }}
+  ADB_BASE_DIR: 'deps/work/install'  # ADB 最终路径基础目录
+  MAIN_PY_FILE: 'deps/main.py'       # 主程序入口
+
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ['windows-latest', 'ubuntu-latest', 'macos-latest']
-        include:
-          - os: windows-latest
-            system: win
-            ext: .exe
-            adb_script: adb_windows.sh
-            adb_binary: adb.exe
-          - os: ubuntu-latest
-            system: linux
-            ext: ''
-            adb_script: adb_linux.sh
-            adb_binary: adb-linux
-          - os: macos-latest
-            system: macos
-            ext: ''
-            adb_script: adb_macos.sh
-            adb_binary: adb-macos
-
-    env:
-      MAIN_PY_FILE: 'deps/main.py'
-      APP_NAME: 'shellx'
-      VERSION: '${{ github.sha }}'
-      ADB_DIR: 'deps/work/install'
-
+  # -------------------------- 构建阶段：按系统+架构生成中间产物 --------------------------
+  build-windows-x86:
+    runs-on: windows-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.10.x
+      - name: Set up Python (32-bit)
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.x
+          architecture: 'x86'
 
-    - name: Install PyInstaller
-      run: |
-        pip install pyinstaller
-      working-directory: ./
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          choco install zip -y  # 安装打包工具
+        shell: pwsh
 
-    - name: Clean previous builds
-      run: |
-        rm -rf dist/ build/ ${{ env.ADB_DIR }}
-      shell: bash
-      working-directory: ./
+      - name: Clean previous builds
+        run: |
+          Remove-Item -Recurse -Force dist, build, $env:ADB_BASE_DIR -ErrorAction SilentlyContinue
+        shell: pwsh
 
-    - name: Execute ADB script
-      run: |
-        chmod +x deps/${{ matrix.adb_script }}
-        deps/${{ matrix.adb_script }}
-      shell: bash
-      working-directory: ./
+      - name: Execute ADB script (Windows x86)
+        run: |
+          chmod +x deps/adb_windows.sh
+          deps/adb_windows.sh
+        shell: bash
 
-    - name: Verify ADB binary
-      run: |
-        test -f ${{ env.ADB_DIR }}/${{ matrix.adb_binary }} || { echo "ADB binary not found!"; exit 1; }
-        ls -l ${{ env.ADB_DIR }}
-      shell: bash
-      working-directory: ./
+      - name: Verify ADB binary
+        run: |
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb.exe" ]; then
+            echo "ADB binary not found!" && exit 1
+          fi
+          ls -l ${{ env.ADB_BASE_DIR }}
+        shell: bash
 
-    - name: Build executable with custom name
-      run: |
-        pyinstaller --clean --onefile \
-          --name ${{ env.APP_NAME }}${{ matrix.ext }} \
-          ${{ env.MAIN_PY_FILE }}
-      working-directory: ./
+      - name: Build shellx executable (32-bit)
+        run: |
+          pyinstaller --clean --onefile --name "${{ env.APP_NAME }}.exe" ${{ env.MAIN_PY_FILE }}
+        shell: bash
 
-    - name: Copy ADB binary to dist directory
-      run: |
-        cp ${{ env.ADB_DIR }}/${{ matrix.adb_binary }} dist/adb${{ matrix.ext }}
-        ls -l dist/
-      shell: bash
-      working-directory: ./
+      - name: Copy ADB to dist
+        run: |
+          cp ${{ env.ADB_BASE_DIR }}/adb.exe dist/adb.exe
+          ls -l dist/
+        shell: bash
 
-    - name: Create versioned zip package
-      id: create_zip
-      run: |
-        ZIP_NAME="${{ env.APP_NAME }}-${{ matrix.system }}-${GITHUB_SHA::8}.zip"
-        cd dist
-        zip -r ../${ZIP_NAME} ./*
-        cd ..
-        echo "zip_name=${ZIP_NAME}" >> $GITHUB_ENV
-        echo "artifact_path=$(realpath ${ZIP_NAME})" >> $GITHUB_ENV
-      shell: bash
-      working-directory: ./
+      - name: Upload intermediate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-win-x86
+          path: dist/
+          retention-days: 1
 
-    - name: Upload versioned zip artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.APP_NAME }}-${{ matrix.system }}
-        path: ${{ env.artifact_path }}
-        retention-days: 7
-        if-no-files-found: error
+
+  build-windows-x64:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python (64-bit)
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.x
+          architecture: 'x64'
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          choco install zip -y
+        shell: pwsh
+
+      - name: Clean previous builds
+        run: |
+          Remove-Item -Recurse -Force dist, build, $env:ADB_BASE_DIR -ErrorAction SilentlyContinue
+        shell: pwsh
+
+      - name: Execute ADB script (Windows x64)
+        run: |
+          chmod +x deps/adb_windows.sh
+          deps/adb_windows.sh
+        shell: bash
+
+      - name: Verify ADB binary
+        run: |
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb.exe" ]; then
+            echo "ADB binary not found!" && exit 1
+          fi
+        shell: bash
+
+      - name: Build shellx executable (64-bit)
+        run: |
+          pyinstaller --clean --onefile --name "${{ env.APP_NAME }}.exe" ${{ env.MAIN_PY_FILE }}
+        shell: bash
+
+      - name: Copy ADB to dist
+        run: |
+          cp ${{ env.ADB_BASE_DIR }}/adb.exe dist/adb.exe
+        shell: bash
+
+      - name: Upload intermediate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-win-x64
+          path: dist/
+          retention-days: 1
+
+
+  build-linux-x86_64:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check architecture
+        run: |
+          if [ "$(uname -m)" != "x86_64" ]; then
+            echo "Unexpected architecture: $(uname -m)" && exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.x
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          sudo apt update && sudo apt install -y zip unzip
+
+      - name: Clean previous builds
+        run: |
+          rm -rf dist/ build/ ${{ env.ADB_BASE_DIR }}
+
+      - name: Execute ADB script (Linux x86_64)
+        run: |
+          chmod +x deps/adb_linux.sh
+          deps/adb_linux.sh
+
+      - name: Verify ADB binary
+        run: |
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb-linux/adb" ]; then
+            echo "ADB binary not found!" && exit 1
+          fi
+
+      - name: Build shellx executable
+        run: |
+          pyinstaller --clean --onefile --name "${{ env.APP_NAME }}" ${{ env.MAIN_PY_FILE }}
+
+      - name: Copy ADB to dist
+        run: |
+          cp ${{ env.ADB_BASE_DIR }}/adb-linux/adb dist/adb
+
+      - name: Upload intermediate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux-x86_64
+          path: dist/
+          retention-days: 1
+
+
+  build-macos-x86_64:
+    runs-on: macos-13  # x86_64 架构
+    steps:
+      - name: Check architecture
+        run: |
+          if [ "$(uname -m)" != "x86_64" ]; then
+            echo "Unexpected architecture: $(uname -m)" && exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.x
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          brew install zip
+
+      - name: Clean previous builds
+        run: |
+          rm -rf dist/ build/ ${{ env.ADB_BASE_DIR }}
+
+      - name: Execute ADB script (macOS x86_64)
+        run: |
+          chmod +x deps/adb_macos.sh
+          deps/adb_macos.sh
+
+      - name: Verify ADB binary
+        run: |
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb-macos/adb" ]; then
+            echo "ADB binary not found!" && exit 1
+          fi
+
+      - name: Build shellx executable
+        run: |
+          pyinstaller --clean --onefile --name "${{ env.APP_NAME }}" ${{ env.MAIN_PY_FILE }}
+
+      - name: Copy ADB to dist
+        run: |
+          cp ${{ env.ADB_BASE_DIR }}/adb-macos/adb dist/adb
+
+      - name: Upload intermediate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-macos-x86_64
+          path: dist/
+          retention-days: 1
+
+
+  build-macos-aarch64:
+    runs-on: macos-latest  # Apple Silicon (aarch64)
+    steps:
+      - name: Check architecture
+        run: |
+          if [ "$(uname -m)" != "arm64" ]; then
+            echo "Unexpected architecture: $(uname -m)" && exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.x
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          brew install zip
+
+      - name: Clean previous builds
+        run: |
+          rm -rf dist/ build/ ${{ env.ADB_BASE_DIR }}
+
+      - name: Execute ADB script (macOS aarch64)
+        run: |
+          chmod +x deps/adb_macos.sh
+          deps/adb_macos.sh
+
+      - name: Verify ADB binary
+        run: |
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb-macos/adb" ]; then
+            echo "ADB binary not found!" && exit 1
+          fi
+
+      - name: Build shellx executable
+        run: |
+          pyinstaller --clean --onefile --name "${{ env.APP_NAME }}" ${{ env.MAIN_PY_FILE }}
+
+      - name: Copy ADB to dist
+        run: |
+          cp ${{ env.ADB_BASE_DIR }}/adb-macos/adb dist/adb
+
+      - name: Upload intermediate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-macos-aarch64
+          path: dist/
+          retention-days: 1
+
+
+  # -------------------------- 打包阶段：整合中间产物并生成最终压缩包 --------------------------
+  package-win-x86:
+    needs: build-windows-x86
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-win-x86
+          path: dist/
+
+      - name: Package as zip
+        run: |
+          VERSION=${{ env.VERSION }}
+          ZIP_NAME="${{ env.APP_NAME }}-win-x86-${VERSION}.zip"
+          cd dist && zip -r ../${ZIP_NAME} ./*
+
+      - name: Upload final package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-win-x86-${{ env.VERSION }}
+          path: ./*.zip
+          retention-days: 7
+
+
+  package-win-x64:
+    needs: build-windows-x64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-win-x64
+          path: dist/
+
+      - name: Package as zip
+        run: |
+          VERSION=${{ env.VERSION }}
+          ZIP_NAME="${{ env.APP_NAME }}-win-x64-${VERSION}.zip"
+          cd dist && zip -r ../${ZIP_NAME} ./*
+
+      - name: Upload final package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-win-x64-${{ env.VERSION }}
+          path: ./*.zip
+          retention-days: 7
+
+
+  package-linux-x86_64:
+    needs: build-linux-x86_64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux-x86_64
+          path: dist/
+
+      - name: Fix permissions
+        run: chmod +x dist/*
+
+      - name: Package as zip
+        run: |
+          VERSION=${{ env.VERSION }}
+          ZIP_NAME="${{ env.APP_NAME }}-linux-x86_64-${VERSION}.zip"
+          cd dist && zip -r ../${ZIP_NAME} ./*
+
+      - name: Upload final package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-linux-x86_64-${{ env.VERSION }}
+          path: ./*.zip
+          retention-days: 7
+
+
+  package-macos-x86_64:
+    needs: build-macos-x86_64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-macos-x86_64
+          path: dist/
+
+      - name: Fix permissions
+        run: chmod +x dist/*
+
+      - name: Package as zip
+        run: |
+          VERSION=${{ env.VERSION }}
+          ZIP_NAME="${{ env.APP_NAME }}-macos-x86_64-${VERSION}.zip"
+          cd dist && zip -r ../${ZIP_NAME} ./*
+
+      - name: Upload final package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-macos-x86_64-${{ env.VERSION }}
+          path: ./*.zip
+          retention-days: 7
+
+
+  package-macos-aarch64:
+    needs: build-macos-aarch64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-macos-aarch64
+          path: dist/
+
+      - name: Fix permissions
+        run: chmod +x dist/*
+
+      - name: Package as zip
+        run: |
+          VERSION=${{ env.VERSION }}
+          ZIP_NAME="${{ env.APP_NAME }}-macos-aarch64-${VERSION}.zip"
+          cd dist && zip -r ../${ZIP_NAME} ./*
+
+      - name: Upload final package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-macos-aarch64-${{ env.VERSION }}
+          path: ./*.zip
+          retention-days: 7
+
+
+  # -------------------------- 汇总发布：收集所有最终产物 --------------------------
+  release:
+    needs:
+      - package-win-x86
+      - package-win-x64
+      - package-linux-x86_64
+      - package-macos-x86_64
+      - package-macos-aarch64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all packages
+        uses: actions/download-artifact@v4
+        with:
+          path: release/
+
+      - name: Generate checksums
+        run: |
+          cd release
+          find . -type f -name "*.zip" -exec sh -c 'for file do sha256sum "$file" > "$file.sha256"; done' sh {} +
+
+      - name: Upload all releases
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-all-releases-${{ env.VERSION }}
+          path: release/
+          retention-days: 30
