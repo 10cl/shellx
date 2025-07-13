@@ -1,107 +1,285 @@
 ---
 title: 'Development'
-description: 'Preview changes locally to update your docs'
+description: 'Development guide for ShellX.ai - AI-powered terminal'
 ---
 
 <Info>
-  **Prerequisite**: Please install Node.js (version 19 or higher) before proceeding. <br />
-  Please upgrade to ```docs.json``` before proceeding and delete the legacy ```mint.json``` file.
+  **Prerequisites**: 
+  - Node.js (version 18 or higher)
+  - Android Studio (for Android development)
+  - Git for version control
 </Info>
 
-Follow these steps to install and run Mintlify on your operating system:
+## Development Environment Setup
 
-**Step 1**: Install Mintlify:
+Follow these steps to set up your development environment for ShellX.ai:
+
+**Step 1**: Clone the repository
 
 <CodeGroup>
 
-  ```bash npm
-  npm i -g mintlify
-  ```
-
-```bash yarn
-yarn global add mintlify
+```bash Git
+git clone https://github.com/10cl/shellx.git
+cd shellx
 ```
 
 </CodeGroup>
 
-**Step 2**: Navigate to the docs directory (where the `docs.json` file is located) and execute the following command:
-
-```bash
-mintlify dev
-```
-
-A local preview of your documentation will be available at `http://localhost:3000`.
-
-### Custom Ports
-
-By default, Mintlify uses port 3000. You can customize the port Mintlify runs on by using the `--port` flag. To run Mintlify on port 3333, for instance, use this command:
-
-```bash
-mintlify dev --port 3333
-```
-
-If you attempt to run Mintlify on a port that's already in use, it will use the next available port:
-
-```md
-Port 3000 is already in use. Trying 3001 instead.
-```
-
-## Mintlify Versions
-
-Please note that each CLI release is associated with a specific version of Mintlify. If your local website doesn't align with the production version, please update the CLI:
+**Step 2**: Install dependencies
 
 <CodeGroup>
 
 ```bash npm
-npm i -g mintlify@latest
+npm install
 ```
 
 ```bash yarn
-yarn global upgrade mintlify
+yarn install
 ```
 
 </CodeGroup>
 
-## Validating Links
+**Step 3**: Configure environment variables
 
-The CLI can assist with validating reference links made in your documentation. To identify any broken links, use the following command:
+Create a `.env` file in the root directory:
+
+```env
+# AI Service Configuration
+AI_API_KEY=your_ai_api_key_here
+AI_SERVICE_URL=https://api.your-ai-service.com
+
+# Database Configuration
+DATABASE_URL=your_database_url_here
+
+# Security
+JWT_SECRET=your_jwt_secret_here
+```
+
+**Step 4**: Start the development server
 
 ```bash
-mintlify broken-links
+npm run dev
+```
+
+The development server will be available at `http://localhost:3000`.
+
+## Architecture Overview
+
+ShellX.ai follows a modular architecture designed for scalability and maintainability:
+
+### Core Components
+
+- **AI Engine**: Handles natural language processing and command interpretation
+- **Terminal Interface**: Web-based terminal emulator with AI integration
+- **Command Parser**: Intelligent command parsing and execution
+- **Session Manager**: Manages user sessions and AI context
+- **Security Layer**: Authentication and authorization system
+
+### Technology Stack
+
+- **Frontend**: React.js with TypeScript
+- **Backend**: Node.js with Express
+- **AI Integration**: OpenAI API / Custom AI models
+- **Database**: PostgreSQL / MongoDB
+- **Real-time Communication**: WebSockets
+- **Mobile**: React Native for Android
+
+## Development Workflow
+
+### Local Development
+
+1. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+
+2. **Run tests**:
+   ```bash
+   npm test
+   ```
+
+3. **Build for production**:
+   ```bash
+   npm run build
+   ```
+
+### Android Development
+
+For Android-specific development:
+
+1. **Setup Android development environment**:
+   ```bash
+   # Install Android dependencies
+   npm run android:setup
+   ```
+
+2. **Build Android APK**:
+   ```bash
+   npm run android:build
+   ```
+
+3. **Run on Android device**:
+   ```bash
+   npm run android:run
+   ```
+
+## AI Integration
+
+### Custom AI Agents
+
+Create custom AI agents for specific tasks:
+
+```javascript
+// Example: Custom AI agent for file operations
+class FileOperationAgent {
+  constructor(apiKey) {
+    this.apiKey = apiKey;
+  }
+
+  async processCommand(naturalLanguageInput) {
+    // AI processing logic
+    const command = await this.translateToCommand(naturalLanguageInput);
+    return this.executeCommand(command);
+  }
+
+  async translateToCommand(input) {
+    // AI translation logic
+    return aiService.translate(input);
+  }
+}
+```
+
+### AI Model Configuration
+
+Configure AI models in `config/ai.js`:
+
+```javascript
+module.exports = {
+  models: {
+    commandParser: {
+      model: 'gpt-3.5-turbo',
+      temperature: 0.3,
+      maxTokens: 500
+    },
+    codeGenerator: {
+      model: 'codex',
+      temperature: 0.1,
+      maxTokens: 1000
+    }
+  }
+};
+```
+
+## API Integration
+
+### REST API Endpoints
+
+ShellX.ai provides RESTful APIs for integration:
+
+```javascript
+// Authentication
+POST /api/auth/login
+POST /api/auth/register
+
+// Terminal Operations
+GET /api/terminal/sessions
+POST /api/terminal/execute
+WS /api/terminal/ws
+
+// AI Services
+POST /api/ai/process
+GET /api/ai/suggestions
+```
+
+### WebSocket Integration
+
+Real-time terminal communication:
+
+```javascript
+const socket = io('ws://localhost:3000');
+
+socket.on('terminal-output', (data) => {
+  console.log('Terminal output:', data);
+});
+
+socket.emit('terminal-input', {
+  command: 'ls -la',
+  sessionId: 'session-123'
+});
+```
+
+## Testing
+
+### Unit Tests
+
+Run unit tests for core functionality:
+
+```bash
+npm run test:unit
+```
+
+### Integration Tests
+
+Test AI integration and API endpoints:
+
+```bash
+npm run test:integration
+```
+
+### E2E Tests
+
+End-to-end testing with Cypress:
+
+```bash
+npm run test:e2e
 ```
 
 ## Deployment
 
-<Tip>
-  Unlimited editors available under the [Pro
-  Plan](https://mintlify.com/pricing) and above.
-</Tip>
+### Production Build
 
-If the deployment is successful, you should see the following:
+```bash
+npm run build:production
+```
 
-<Frame>
-  <img src="/images/checks-passed.png" style={{ borderRadius: '0.5rem' }} />
-</Frame>
+### Docker Deployment
 
-## Code Formatting
+```bash
+# Build Docker image
+docker build -t shellx-ai .
 
-We suggest using extensions on your IDE to recognize and format MDX. If you're a VSCode user, consider the [MDX VSCode extension](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx) for syntax highlighting, and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for code formatting.
+# Run container
+docker run -p 3000:3000 shellx-ai
+```
 
-## Troubleshooting
+### Environment Configuration
 
-<AccordionGroup>
-  <Accordion title='Error: Could not load the "sharp" module using the darwin-arm64 runtime'>
+Production environment variables:
 
-    This may be due to an outdated version of node. Try the following:
-    1. Remove the currently-installed version of mintlify: `npm remove -g mintlify`
-    2. Upgrade to Node v19 or higher.
-    3. Reinstall mintlify: `npm install -g mintlify`
-  </Accordion>
+```env
+NODE_ENV=production
+PORT=3000
+AI_API_KEY=production_key
+DATABASE_URL=production_database_url
+```
 
-  <Accordion title="Issue: Encountering an unknown error">
-  
-    Solution: Go to the root of your device and delete the \~/.mintlify folder. Afterwards, run `mintlify dev` again.
-  </Accordion>
-</AccordionGroup>
+## Contributing
 
-Curious about what changed in the CLI version? [Check out the CLI changelog.](https://www.npmjs.com/package/mintlify?activeTab=versions)
+### Development Guidelines
+
+1. **Code Style**: Follow ESLint and Prettier configurations
+2. **Testing**: Write tests for new features
+3. **Documentation**: Update documentation for API changes
+4. **Security**: Follow security best practices for AI integration
+
+### Pull Request Process
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests
+5. Submit a pull request
+
+<Note>
+  For detailed API documentation, visit the [API Reference](/api-reference/introduction) section.
+</Note>

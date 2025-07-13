@@ -1,33 +1,168 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: 'API Reference'
+description: 'ShellX.ai API documentation for developers'
 ---
 
 <Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
+  ShellX.ai provides comprehensive APIs for integrating AI-powered terminal functionality into your applications.
 </Note>
 
-## Welcome
+## Welcome to ShellX.ai API
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+ShellX.ai offers two primary integration methods: [REST API](https://docs.shellx.ai/api-reference/rest) for traditional web applications and [WebSocket API](https://docs.shellx.ai/api-reference/websocket) for real-time terminal interactions.
 
 <Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
+  title="REST API Endpoints"
+  icon="code"
+  href="/api-reference/rest"
 >
-  View the OpenAPI specification file
+  Complete REST API documentation with examples
+</Card>
+
+<Card
+  title="WebSocket API"
+  icon="bolt"
+  href="/api-reference/websocket"
+>
+  Real-time terminal communication API
+</Card>
+
+<Card
+  title="AI Integration API"
+  icon="robot"
+  href="/api-reference/ai"
+>
+  AI command processing and natural language APIs
 </Card>
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+All API endpoints require authentication using API keys or Bearer tokens. You can obtain your API key from the ShellX.ai dashboard.
+
+### API Key Authentication
+
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.shellx.ai/v1/terminal/sessions
+```
+
+### JWT Token Authentication
+
+```bash
+curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  https://api.shellx.ai/v1/ai/process
+```
+
+## Base URL
+
+All API endpoints are relative to the base URL:
+
+```
+https://api.shellx.ai/v1
+```
+
+## Rate Limiting
+
+API requests are rate-limited to ensure fair usage:
+
+- **Free Tier**: 100 requests per hour
+- **Pro Tier**: 1,000 requests per hour
+- **Enterprise**: Custom limits
+
+When rate limits are exceeded, the API returns a `429 Too Many Requests` status code.
+
+## Error Handling
+
+ShellX.ai API uses standard HTTP status codes and returns detailed error messages:
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
+{
+  "error": {
+    "code": "INVALID_COMMAND",
+    "message": "The specified command could not be processed",
+    "details": "Command syntax error at position 15"
   }
-]
+}
 ```
+
+## SDK and Libraries
+
+ShellX.ai provides official SDKs for popular programming languages:
+
+<CardGroup cols={2}>
+  <Card
+    title="JavaScript/Node.js"
+    icon="js"
+    href="https://github.com/shellx-ai/sdk-javascript"
+  >
+    npm install @shellx/sdk
+  </Card>
+  <Card
+    title="Python"
+    icon="python"
+    href="https://github.com/shellx-ai/sdk-python"
+  >
+    pip install shellx-sdk
+  </Card>
+  <Card
+    title="Java"
+    icon="java"
+    href="https://github.com/shellx-ai/sdk-java"
+  >
+    Maven and Gradle support
+  </Card>
+  <Card
+    title="Go"
+    icon="golang"
+    href="https://github.com/shellx-ai/sdk-go"
+  >
+    go get github.com/shellx-ai/sdk-go
+  </Card>
+</CardGroup>
+
+## Quick Start Example
+
+Here's a simple example of using the ShellX.ai API:
+
+```javascript
+const ShellX = require('@shellx/sdk');
+
+const client = new ShellX({
+  apiKey: 'your-api-key-here'
+});
+
+// Process natural language command
+const result = await client.ai.process({
+  input: "show me all files in the current directory",
+  context: {
+    workingDirectory: "/home/user/projects"
+  }
+});
+
+console.log(result.command); // "ls -la"
+console.log(result.output);  // File listing
+```
+
+## Webhooks
+
+ShellX.ai supports webhooks for real-time notifications:
+
+```json
+{
+  "url": "https://your-app.com/webhook",
+  "events": ["command.executed", "error.occurred", "session.ended"],
+  "secret": "your-webhook-secret"
+}
+```
+
+## API Versioning
+
+The API uses semantic versioning. Current version is `v1`. Breaking changes will result in a new version number.
+
+## Support
+
+For API support and questions:
+
+- **Documentation**: [https://docs.shellx.ai](https://docs.shellx.ai)
+- **GitHub Issues**: [https://github.com/10cl/shellx/issues](https://github.com/10cl/shellx/issues)
+- **Email**: support@shellx.ai

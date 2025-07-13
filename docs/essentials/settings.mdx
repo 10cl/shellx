@@ -1,318 +1,376 @@
 ---
-title: 'Global Settings'
-description: 'Mintlify gives you complete control over the look and feel of your documentation using the docs.json file'
+title: 'Configuration'
+description: 'Configure ShellX.ai settings and preferences'
 icon: 'gear'
 ---
 
-Every Mintlify site needs a `docs.json` file with the core configuration settings. Learn more about the [properties](#properties) below.
+## Configuration Overview
 
-## Properties
+ShellX.ai provides extensive configuration options to customize your AI-powered terminal experience. Settings can be configured through the web interface, configuration files, or command-line options.
 
-<ResponseField name="name" type="string" required>
-Name of your project. Used for the global title.
+## Global Configuration
 
-Example: `mintlify`
+### Basic Settings
 
-</ResponseField>
+Configure basic ShellX.ai behavior:
 
-<ResponseField name="navigation" type="Navigation[]" required>
-  An array of groups with all the pages within that group
-  <Expandable title="Navigation">
-    <ResponseField name="group" type="string">
-    The name of the group.
-
-    Example: `Settings`
-
-    </ResponseField>
-    <ResponseField name="pages" type="string[]">
-    The relative paths to the markdown files that will serve as pages.
-
-    Example: `["customization", "page"]`
-
-    </ResponseField>
-
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="logo" type="string or object">
-  Path to logo image or object with path to "light" and "dark" mode logo images
-  <Expandable title="Logo">
-    <ResponseField name="light" type="string">
-      Path to the logo in light mode
-    </ResponseField>
-    <ResponseField name="dark" type="string">
-      Path to the logo in dark mode
-    </ResponseField>
-    <ResponseField name="href" type="string" default="/">
-      Where clicking on the logo links you to
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="favicon" type="string">
-  Path to the favicon image
-</ResponseField>
-
-<ResponseField name="colors" type="Colors">
-  Hex color codes for your global theme
-  <Expandable title="Colors">
-    <ResponseField name="primary" type="string" required>
-      The primary color. Used for most often for highlighted content, section
-      headers, accents, in light mode
-    </ResponseField>
-    <ResponseField name="light" type="string">
-      The primary color for dark mode. Used for most often for highlighted
-      content, section headers, accents, in dark mode
-    </ResponseField>
-    <ResponseField name="dark" type="string">
-      The primary color for important buttons
-    </ResponseField>
-    <ResponseField name="background" type="object">
-      The color of the background in both light and dark mode
-      <Expandable title="Object">
-        <ResponseField name="light" type="string" required>
-          The hex color code of the background in light mode
-        </ResponseField>
-        <ResponseField name="dark" type="string" required>
-          The hex color code of the background in dark mode
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="topbarLinks" type="TopbarLink[]">
-  Array of `name`s and `url`s of links you want to include in the topbar
-  <Expandable title="TopbarLink">
-    <ResponseField name="name" type="string">
-    The name of the button.
-
-    Example: `Contact us`
-    </ResponseField>
-    <ResponseField name="url" type="string">
-    The url once you click on the button. Example: `https://mintlify.com/docs`
-    </ResponseField>
-
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="topbarCtaButton" type="Call to Action">
-  <Expandable title="Topbar Call to Action">
-    <ResponseField name="type" type={'"link" or "github"'} default="link">
-    Link shows a button. GitHub shows the repo information at the url provided including the number of GitHub stars.
-    </ResponseField>
-    <ResponseField name="url" type="string">
-    If `link`: What the button links to.
-    
-    If `github`: Link to the repository to load GitHub information from.
-    </ResponseField>
-    <ResponseField name="name" type="string">
-    Text inside the button. Only required if `type` is a `link`.
-    </ResponseField>
-
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="versions" type="string[]">
-  Array of version names. Only use this if you want to show different versions
-  of docs with a dropdown in the navigation bar.
-</ResponseField>
-
-<ResponseField name="anchors" type="Anchor[]">
-  An array of the anchors, includes the `icon`, `color`, and `url`.
-  <Expandable title="Anchor">
-    <ResponseField name="icon" type="string">
-    The [Font Awesome](https://fontawesome.com/search?q=heart) icon used to feature the anchor.
-
-    Example: `comments`
-    </ResponseField>
-    <ResponseField name="name" type="string">
-    The name of the anchor label.
-
-    Example: `Community`
-    </ResponseField>
-    <ResponseField name="url" type="string">
-      The start of the URL that marks what pages go in the anchor. Generally, this is the name of the folder you put your pages in.
-    </ResponseField>
-    <ResponseField name="color" type="string">
-      The hex color of the anchor icon background. Can also be a gradient if you pass an object with the properties `from` and `to` that are each a hex color.
-    </ResponseField>
-    <ResponseField name="version" type="string">
-      Used if you want to hide an anchor until the correct docs version is selected.
-    </ResponseField>
-    <ResponseField name="isDefaultHidden" type="boolean" default="false">
-      Pass `true` if you want to hide the anchor until you directly link someone to docs inside it.
-    </ResponseField>
-    <ResponseField name="iconType" default="duotone" type="string">
-      One of: "brands", "duotone", "light", "sharp-solid", "solid", or "thin"
-    </ResponseField>
-
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="topAnchor" type="Object">
-  Override the default configurations for the top-most anchor.
-  <Expandable title="Object">
-    <ResponseField name="name" default="Documentation" type="string">
-      The name of the top-most anchor
-    </ResponseField>
-    <ResponseField name="icon" default="book-open" type="string">
-      Font Awesome icon.
-    </ResponseField>
-    <ResponseField name="iconType" default="duotone" type="string">
-      One of: "brands", "duotone", "light", "sharp-solid", "solid", or "thin"
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="tabs" type="Tabs[]">
-  An array of navigational tabs.
-  <Expandable title="Tabs">
-    <ResponseField name="name" type="string">
-      The name of the tab label.
-    </ResponseField>
-    <ResponseField name="url" type="string">
-      The start of the URL that marks what pages go in the tab. Generally, this
-      is the name of the folder you put your pages in.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="api" type="API">
-  Configuration for API settings. Learn more about API pages at [API Components](/api-playground/demo).
-  <Expandable title="API">
-    <ResponseField name="baseUrl" type="string">
-      The base url for all API endpoints. If `baseUrl` is an array, it will enable for multiple base url
-      options that the user can toggle.
-    </ResponseField>
-
-    <ResponseField name="auth" type="Auth">
-      <Expandable title="Auth">
-        <ResponseField name="method" type='"bearer" | "basic" | "key"'>
-          The authentication strategy used for all API endpoints.
-        </ResponseField>
-        <ResponseField name="name" type="string">
-        The name of the authentication parameter used in the API playground.
-
-        If method is `basic`, the format should be `[usernameName]:[passwordName]`
-        </ResponseField>
-        <ResponseField name="inputPrefix" type="string">
-        The default value that's designed to be a prefix for the authentication input field.
-
-        E.g. If an `inputPrefix` of `AuthKey` would inherit the default input result of the authentication field as `AuthKey`.
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
-
-    <ResponseField name="playground" type="Playground">
-      Configurations for the API playground
-
-      <Expandable title="Playground">
-        <ResponseField name="mode" default="show" type='"show" | "simple" | "hide"'>
-          Whether the playground is showing, hidden, or only displaying the endpoint with no added user interactivity `simple`
-
-          Learn more at the [playground guides](/api-playground/demo)
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
-
-    <ResponseField name="maintainOrder" type="boolean">
-      Enabling this flag ensures that key ordering in OpenAPI pages matches the key ordering defined in the OpenAPI file.
-
-      <Warning>This behavior will soon be enabled by default, at which point this field will be deprecated.</Warning>
-    </ResponseField>
-
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="openapi" type="string | string[]">
-  A string or an array of strings of URL(s) or relative path(s) pointing to your
-  OpenAPI file.
-  
-  Examples:
-  <CodeGroup>
-    ```json Absolute
-    "openapi": "https://example.com/openapi.json"
-    ```
-    ```json Relative
-    "openapi": "/openapi.json"
-    ```
-    ```json Multiple
-    "openapi": ["https://example.com/openapi1.json", "/openapi2.json", "/openapi3.json"]
-    ```
-  </CodeGroup>
-
-</ResponseField>
-
-<ResponseField name="footerSocials" type="FooterSocials">
-  An object of social media accounts where the key:property pair represents the social media platform and the account url.
-  
-  Example: 
-  ```json
-  {
-    "x": "https://x.com/mintlify",
-    "website": "https://mintlify.com"
+```json
+{
+  "ai": {
+    "model": "gpt-3.5-turbo",
+    "temperature": 0.7,
+    "maxTokens": 1000,
+    "timeout": 30
+  },
+  "terminal": {
+    "theme": "dark",
+    "fontSize": 14,
+    "fontFamily": "Monaco, monospace",
+    "autoComplete": true
+  },
+  "security": {
+    "apiKey": "your-api-key",
+    "maxSessions": 5,
+    "sessionTimeout": 3600
   }
-  ```
-  <Expandable title="FooterSocials">
-    <ResponseField name="[key]" type="string">
-    One of the following values `website`, `facebook`, `x`, `discord`, `slack`, `github`, `linkedin`, `instagram`, `hacker-news`
-    
-    Example: `x`
-    </ResponseField>
-    <ResponseField name="property" type="string">
-    The URL to the social platform.
-    
-    Example: `https://x.com/mintlify`
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+}
+```
 
-<ResponseField name="feedback" type="Feedback">
-  Configurations to enable feedback buttons
+### AI Model Configuration
 
-  <Expandable title="Feedback">
-    <ResponseField name="suggestEdit" type="boolean" default="false">
-    Enables a button to allow users to suggest edits via pull requests
-    </ResponseField>
-    <ResponseField name="raiseIssue" type="boolean" default="false">
-    Enables a button to allow users to raise an issue about the documentation
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+Choose and configure AI models:
 
-<ResponseField name="modeToggle" type="ModeToggle">
-  Customize the dark mode toggle.
-  <Expandable title="ModeToggle">
-    <ResponseField name="default" type={'"light" or "dark"'}>
-      Set if you always want to show light or dark mode for new users. When not
-      set, we default to the same mode as the user's operating system.
-    </ResponseField>
-    <ResponseField name="isHidden" type="boolean" default="false">
-      Set to true to hide the dark/light mode toggle. You can combine `isHidden` with `default` to force your docs to only use light or dark mode. For example:
-      
-      <CodeGroup>
-      ```json Only Dark Mode
-      "modeToggle": {
-        "default": "dark",
-        "isHidden": true
+```javascript
+// Available models
+const models = {
+  "gpt-3.5-turbo": {
+    name: "GPT-3.5 Turbo",
+    description: "Fast and efficient for most tasks",
+    maxTokens: 4096,
+    costPerToken: 0.002
+  },
+  "gpt-4": {
+    name: "GPT-4",
+    description: "Most capable model for complex tasks",
+    maxTokens: 8192,
+    costPerToken: 0.03
+  },
+  "claude-3": {
+    name: "Claude-3",
+    description: "Excellent for code generation",
+    maxTokens: 100000,
+    costPerToken: 0.015
+  }
+};
+```
+
+## Terminal Customization
+
+### Theme Configuration
+
+Customize the terminal appearance:
+
+```css
+/* Dark Theme */
+.shellx-terminal.dark {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  border-color: #333333;
+}
+
+/* Light Theme */
+.shellx-terminal.light {
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #cccccc;
+}
+
+/* Custom Theme */
+.shellx-terminal.custom {
+  background-color: #2d2d2d;
+  color: #f8f8f2;
+  border-color: #44475a;
+}
+```
+
+### Font and Display
+
+Configure text rendering:
+
+```json
+{
+  "display": {
+    "fontFamily": "JetBrains Mono, Monaco, monospace",
+    "fontSize": 14,
+    "lineHeight": 1.5,
+    "letterSpacing": 0.5,
+    "cursorStyle": "block",
+    "cursorBlink": true
+  }
+}
+```
+
+## AI Assistant Settings
+
+### Response Preferences
+
+Configure how the AI responds:
+
+```json
+{
+  "ai": {
+    "responseStyle": "concise", // "concise", "detailed", "educational"
+    "showExplanations": true,
+    "suggestAlternatives": true,
+    "learnFromFeedback": true,
+    "contextWindow": 10 // Number of previous commands to remember
+  }
+}
+```
+
+### Command Processing
+
+Fine-tune command interpretation:
+
+```json
+{
+  "commandProcessing": {
+    "confirmDestructive": true,
+    "autoCorrect": true,
+    "suggestSimilar": true,
+    "validateSyntax": true,
+    "timeoutSeconds": 30
+  }
+}
+```
+
+## Security Settings
+
+### Authentication
+
+Configure authentication methods:
+
+```json
+{
+  "authentication": {
+    "method": "jwt", // "jwt", "apikey", "oauth"
+    "tokenExpiry": 3600,
+    "refreshTokens": true,
+    "mfa": {
+      "enabled": true,
+      "methods": ["totp", "sms"]
+    }
+  }
+}
+```
+
+### Access Control
+
+Set up access controls:
+
+```json
+{
+  "accessControl": {
+    "allowedCommands": ["ls", "cat", "grep", "find"],
+    "blockedCommands": ["rm", "sudo", "chmod"],
+    "maxConcurrentSessions": 3,
+    "ipWhitelist": ["192.168.1.0/24"],
+    "rateLimiting": {
+      "enabled": true,
+      "maxRequests": 100,
+      "windowMinutes": 60
+    }
+  }
+}
+```
+
+## Environment Configuration
+
+### Development Environment
+
+Configuration for development:
+
+```json
+{
+  "environment": "development",
+  "debug": {
+    "enabled": true,
+    "logLevel": "verbose",
+    "logFile": "/tmp/shellx-debug.log"
+  },
+  "features": {
+    "experimentalFeatures": true,
+    "betaFeatures": true
+  }
+}
+```
+
+### Production Environment
+
+Configuration for production:
+
+```json
+{
+  "environment": "production",
+  "performance": {
+    "cacheEnabled": true,
+    "cacheTTL": 300,
+    "compressionEnabled": true,
+    "maxConcurrentRequests": 1000
+  },
+  "monitoring": {
+    "enabled": true,
+    "metricsEndpoint": "/metrics",
+    "healthCheckEndpoint": "/health"
+  }
+}
+```
+
+## Integration Settings
+
+### Third-party Integrations
+
+Configure external service integrations:
+
+```json
+{
+  "integrations": {
+    "github": {
+      "enabled": true,
+      "token": "github-token",
+      "defaultOrg": "your-org"
+    },
+    "slack": {
+      "enabled": true,
+      "webhook": "https://hooks.slack.com/...",
+      "channel": "#dev-notifications"
+    },
+    "docker": {
+      "enabled": true,
+      "host": "unix:///var/run/docker.sock",
+      "registry": "docker.io"
+    }
+  }
+}
+```
+
+### API Endpoints
+
+Configure API endpoints and services:
+
+```json
+{
+  "apiEndpoints": {
+    "aiService": "https://api.openai.com/v1",
+    "authService": "https://auth.shellx.ai",
+    "loggingService": "https://logs.shellx.ai"
+  }
+}
+```
+
+## User Preferences
+
+### Personal Settings
+
+Individual user preferences:
+
+```json
+{
+  "user": {
+    "preferences": {
+      "defaultShell": "/bin/bash",
+      "timezone": "UTC",
+      "language": "en-US",
+      "shortcuts": {
+        "Ctrl+Space": "ai-suggest",
+        "Ctrl+E": "explain-command",
+        "Ctrl+H": "command-history"
       }
-      ```
+    }
+  }
+}
+```
 
-      ```json Only Light Mode
-      "modeToggle": {
-        "default": "light",
-        "isHidden": true
-      }
-      ```
-      </CodeGroup>
+### Command Aliases
 
-    </ResponseField>
+Create custom command aliases:
 
-  </Expandable>
-</ResponseField>
+```json
+{
+  "aliases": {
+    "ll": "ls -la",
+    "grep-logs": "grep -r 'ERROR' /var/log/",
+    "docker-ps": "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'",
+    "git-status": "git status --porcelain"
+  }
+}
+```
 
-<ResponseField name="backgroundImage" type="string">
-  A background image to be displayed behind every page. See example with
-  [Infisical](https://infisical.com/docs) and [FRPC](https://frpc.io).
-</ResponseField>
+## Configuration Management
+
+### Configuration Files
+
+ShellX.ai looks for configuration files in the following order:
+
+1. `~/.shellx/config.json` (User-specific)
+2. `/etc/shellx/config.json` (System-wide)
+3. `./shellx.config.json` (Project-specific)
+
+### Environment Variables
+
+Override configuration with environment variables:
+
+```bash
+export SHELLX_AI_MODEL=gpt-4
+export SHELLX_API_KEY=your-api-key
+export SHELLX_THEME=dark
+export SHELLX_DEBUG=true
+```
+
+### Command Line Options
+
+Override settings via command line:
+
+```bash
+shellx --model gpt-4 --theme light --debug
+```
+
+## Validation and Testing
+
+### Configuration Validation
+
+Validate your configuration:
+
+```bash
+# Validate configuration file
+shellx config validate
+
+# Test API connectivity
+shellx config test-api
+
+# Check AI model availability
+shellx config test-ai
+```
+
+### Configuration Templates
+
+Use predefined configuration templates:
+
+```bash
+# Initialize with default template
+shellx config init --template default
+
+# Use development template
+shellx config init --template development
+
+# Use production template
+shellx config init --template production
+```
+
+<Note>
+  Configuration changes require a restart of the ShellX.ai service to take effect.
+</Note>
+
+<Tip>
+  Use `shellx config --help` to see all available configuration commands and options.
+</Tip>

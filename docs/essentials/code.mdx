@@ -1,37 +1,491 @@
 ---
-title: 'Code Blocks'
-description: 'Display inline code and code blocks'
+title: 'Code Examples'
+description: 'Code examples and usage patterns for ShellX.ai'
 icon: 'code'
 ---
 
-## Basic
+## Basic Usage Examples
 
-### Inline Code
+ShellX.ai provides multiple ways to interact with AI-powered terminal functionality. Here are common usage patterns:
 
-To denote a `word` or `phrase` as code, enclose it in backticks (`).
+### Command Line Interface
 
+```bash
+# Basic AI command processing
+shellx "list all files in the current directory"
+shellx "find files containing 'config' in their name"
+shellx "show system memory usage"
+
+# Advanced AI processing with context
+shellx "backup all project files to cloud storage" --context project
+shellx "deploy application to production server" --env production
 ```
-To denote a `word` or `phrase` as code, enclose it in backticks (`).
+
+### Natural Language Commands
+
+```bash
+# File operations
+shellx "create a new Python file called main.py"
+shellx "copy all .txt files to backup folder"
+shellx "remove temporary files older than 7 days"
+
+# System monitoring
+shellx "check if port 3000 is open"
+shellx "show top 10 processes by CPU usage"
+shellx "monitor disk space usage"
 ```
 
-### Code Block
+## JavaScript SDK Examples
 
-Use [fenced code blocks](https://www.markdownguide.org/extended-syntax/#fenced-code-blocks) by enclosing code in three backticks and follow the leading ticks with the programming language of your snippet to get syntax highlighting. Optionally, you can also write the name of your code after the programming language.
+### Basic Setup
 
-```java HelloWorld.java
-class HelloWorld {
-    public static void main(String[] args) {
-        System.out.println("Hello, World!");
+```javascript
+const ShellX = require('@shellx/sdk');
+
+// Initialize with API key
+const shellx = new ShellX({
+  apiKey: process.env.SHELLX_API_KEY,
+  model: 'gpt-3.5-turbo'
+});
+
+// Process natural language command
+async function processCommand(input) {
+  try {
+    const result = await shellx.ai.process({
+      input: input,
+      context: {
+        workingDirectory: process.cwd(),
+        shell: process.env.SHELL
+      }
+    });
+    
+    console.log('Command:', result.command);
+    console.log('Output:', result.output);
+    return result;
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
+}
+
+// Example usage
+processCommand("show me all JavaScript files");
+```
+
+### Advanced AI Integration
+
+```javascript
+// Custom AI agent for file operations
+class FileAgent {
+  constructor(shellx) {
+    this.shellx = shellx;
+  }
+
+  async analyzeProject() {
+    const commands = [
+      "count lines of code in all source files",
+      "find TODO comments in the codebase",
+      "check for unused imports",
+      "analyze code complexity"
+    ];
+
+    const results = await Promise.all(
+      commands.map(cmd => this.shellx.ai.process({ input: cmd }))
+    );
+
+    return results;
+  }
+
+  async generateScript(description) {
+    const result = await this.shellx.ai.process({
+      input: `Generate a bash script to: ${description}`,
+      output: 'script'
+    });
+
+    return result.script;
+  }
+}
+
+// Usage
+const agent = new FileAgent(shellx);
+const analysis = await agent.analyzeProject();
+const deployScript = await agent.generateScript("deploy to AWS");
+```
+
+## Python SDK Examples
+
+### Basic Python Integration
+
+```python
+import shellx_sdk
+
+# Initialize client
+client = shellx_sdk.ShellX(api_key="your-api-key")
+
+# Process natural language commands
+def process_command(user_input):
+    try:
+        result = client.ai.process(
+            input=user_input,
+            context={
+                "working_directory": os.getcwd(),
+                "shell": os.environ.get("SHELL", "/bin/bash")
+            }
+        )
+        
+        print(f"Command: {result.command}")
+        print(f"Output: {result.output}")
+        return result
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+# Example usage
+process_command("show me all Python files larger than 1MB")
+```
+
+### Advanced Python Integration
+
+```python
+import asyncio
+import shellx_sdk
+
+class ShellXManager:
+    def __init__(self, api_key):
+        self.client = shellx_sdk.ShellX(api_key=api_key)
+    
+    async def batch_process(self, commands):
+        """Process multiple commands concurrently"""
+        tasks = [
+            self.client.ai.process_async({"input": cmd}) 
+            for cmd in commands
+        ]
+        return await asyncio.gather(*tasks)
+    
+    async def intelligent_file_search(self, query):
+        """AI-powered file search with context"""
+        search_commands = [
+            f"find files matching '{query}'",
+            f"search file contents for '{query}'",
+            f"locate configuration files related to '{query}'"
+        ]
+        
+        results = await self.batch_process(search_commands)
+        return self.consolidate_results(results)
+    
+    def consolidate_results(self, results):
+        """Combine and deduplicate search results"""
+        files = set()
+        for result in results:
+            if result.success:
+                files.update(result.files)
+        return list(files)
+
+# Usage
+manager = ShellXManager("your-api-key")
+files = await manager.intelligent_file_search("database config")
+```
+
+## WebSocket Integration
+
+### Real-time Terminal Communication
+
+```javascript
+// WebSocket client for real-time terminal interaction
+const io = require('socket.io-client');
+
+class ShellXTerminal {
+  constructor(apiKey) {
+    this.socket = io('wss://api.shellx.ai', {
+      auth: { token: apiKey }
+    });
+    
+    this.setupEventHandlers();
+  }
+
+  setupEventHandlers() {
+    this.socket.on('connect', () => {
+      console.log('Connected to ShellX.ai');
+    });
+
+    this.socket.on('terminal-output', (data) => {
+      this.handleOutput(data);
+    });
+
+    this.socket.on('ai-suggestion', (suggestion) => {
+      this.showSuggestion(suggestion);
+    });
+
+    this.socket.on('error', (error) => {
+      console.error('Terminal error:', error);
+    });
+  }
+
+  executeCommand(command) {
+    this.socket.emit('execute-command', {
+      command: command,
+      sessionId: this.sessionId
+    });
+  }
+
+  processNaturalLanguage(input) {
+    this.socket.emit('process-nl', {
+      input: input,
+      context: this.getContext()
+    });
+  }
+
+  handleOutput(data) {
+    console.log('Output:', data.output);
+    if (data.suggestions) {
+      this.showSuggestions(data.suggestions);
     }
+  }
+
+  showSuggestion(suggestion) {
+    console.log('AI Suggestion:', suggestion.text);
+  }
+
+  getContext() {
+    return {
+      workingDirectory: process.cwd(),
+      recentCommands: this.commandHistory.slice(-10),
+      environment: process.env
+    };
+  }
+}
+
+// Usage
+const terminal = new ShellXTerminal(process.env.SHELLX_API_KEY);
+terminal.processNaturalLanguage("show me system information");
+```
+
+## REST API Examples
+
+### Authentication and Basic Requests
+
+```bash
+# Set API key
+export SHELLX_API_KEY="your-api-key-here"
+
+# Process natural language command
+curl -X POST https://api.shellx.ai/v1/ai/process \
+  -H "Authorization: Bearer $SHELLX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "show me all log files from the last hour",
+    "context": {
+      "workingDirectory": "/var/log",
+      "shell": "bash"
+    }
+  }'
+```
+
+### Advanced API Usage
+
+```bash
+# Create a new terminal session
+curl -X POST https://api.shellx.ai/v1/terminal/sessions \
+  -H "Authorization: Bearer $SHELLX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "development-session",
+    "settings": {
+      "shell": "/bin/bash",
+      "workingDirectory": "/home/user/projects"
+    }
+  }'
+
+# Execute command in session
+curl -X POST https://api.shellx.ai/v1/terminal/sessions/session-123/execute \
+  -H "Authorization: Bearer $SHELLX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "ls -la",
+    "aiAssisted": true
+  }'
+
+# Get AI suggestions
+curl -X GET https://api.shellx.ai/v1/ai/suggestions \
+  -H "Authorization: Bearer $SHELLX_API_KEY" \
+  -G \
+  -d "input=git" \
+  -d "context=repository"
+```
+
+## Docker Integration
+
+### Running ShellX.ai in Docker
+
+```dockerfile
+FROM node:18-alpine
+
+# Install ShellX.ai
+RUN npm install -g @shellx/cli
+
+# Set environment variables
+ENV SHELLX_API_KEY=${SHELLX_API_KEY}
+ENV SHELLX_MODEL=gpt-3.5-turbo
+
+# Create app directory
+WORKDIR /app
+
+# Copy application files
+COPY . .
+
+# Install dependencies
+RUN npm install
+
+# Expose port
+EXPOSE 3000
+
+# Start application with ShellX.ai
+CMD ["shellx", "serve", "--port", "3000"]
+```
+
+### Docker Compose Configuration
+
+```yaml
+version: '3.8'
+
+services:
+  shellx-app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - SHELLX_API_KEY=${SHELLX_API_KEY}
+      - SHELLX_MODEL=gpt-3.5-turbo
+      - NODE_ENV=production
+    volumes:
+      - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - redis
+      - postgres
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=shellx
+      - POSTGRES_USER=shellx
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+## Error Handling
+
+### Best Practices for Error Handling
+
+```javascript
+// Comprehensive error handling
+class ShellXErrorHandler {
+  static async handleCommand(command, options = {}) {
+    try {
+      const result = await shellx.ai.process({
+        input: command,
+        ...options
+      });
+      
+      return { success: true, result };
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  static handleError(error) {
+    const errorTypes = {
+      'RATE_LIMIT_EXCEEDED': 'Too many requests. Please wait and try again.',
+      'INVALID_API_KEY': 'Invalid API key. Please check your credentials.',
+      'COMMAND_TIMEOUT': 'Command execution timed out.',
+      'AI_SERVICE_UNAVAILABLE': 'AI service is temporarily unavailable.',
+      'INVALID_COMMAND': 'Command could not be processed.',
+      'PERMISSION_DENIED': 'Insufficient permissions to execute command.'
+    };
+
+    const message = errorTypes[error.code] || 'An unexpected error occurred.';
+    
+    console.error(`ShellX Error: ${message}`);
+    
+    // Log error for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error details:', error);
+    }
+
+    return {
+      success: false,
+      error: {
+        code: error.code,
+        message: message,
+        details: error.details
+      }
+    };
+  }
+}
+
+// Usage
+const result = await ShellXErrorHandler.handleCommand("deploy application");
+if (!result.success) {
+  console.error('Command failed:', result.error.message);
 }
 ```
 
-````md
-```java HelloWorld.java
-class HelloWorld {
-    public static void main(String[] args) {
-        System.out.println("Hello, World!");
-    }
-}
+## Testing
+
+### Unit Testing ShellX.ai Integration
+
+```javascript
+// Jest test example
+const ShellX = require('@shellx/sdk');
+
+describe('ShellX Integration', () => {
+  let shellx;
+
+  beforeEach(() => {
+    shellx = new ShellX({
+      apiKey: process.env.SHELLX_TEST_API_KEY,
+      model: 'gpt-3.5-turbo'
+    });
+  });
+
+  test('should process simple file listing command', async () => {
+    const result = await shellx.ai.process({
+      input: "list all files in current directory"
+    });
+
+    expect(result.command).toContain('ls');
+    expect(result.success).toBe(true);
+  });
+
+  test('should handle complex git operations', async () => {
+    const result = await shellx.ai.process({
+      input: "commit all changes with message 'fix bugs'"
+    });
+
+    expect(result.command).toContain('git add');
+    expect(result.command).toContain('git commit');
+    expect(result.command).toContain('fix bugs');
+  });
+
+  test('should provide error handling for invalid commands', async () => {
+    const result = await shellx.ai.process({
+      input: "invalid command that makes no sense"
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+});
 ```
-````
+
+<Note>
+  For more advanced examples and use cases, check out the [GitHub repository](https://github.com/10cl/shellx) examples directory.
+</Note>

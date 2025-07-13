@@ -1,32 +1,61 @@
-# Mintlify Starter Kit
+# ShellX.ai Documentation
 
-Click on `Use this template` to copy the Mintlify starter kit. The starter kit contains examples including
+ShellX.ai is an AI Agent Powered & Fast web-based, Android terminal that transforms your device into an AI-powered computing experience. This documentation provides comprehensive guides and resources for using and integrating ShellX.ai.
 
-- Guide pages
-- Navigation
-- Customizations
-- API Reference pages
-- Use of popular components
+## What is ShellX.ai?
 
-### Development
+ShellX.ai combines the power of artificial intelligence with traditional terminal functionality to create an intelligent, intuitive, and efficient computing environment. Whether you're a developer, system administrator, or tech enthusiast, ShellX.ai enhances your terminal experience with AI-powered features.
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview the documentation changes locally. To install, use the following command
+## Key Features
 
+- **AI-Powered Command Assistance**: Get intelligent suggestions and auto-completion
+- **Natural Language Processing**: Execute commands using plain English
+- **Cross-Platform Support**: Works on web browsers and Android devices
+- **Real-time AI Help**: Instant explanations and error resolution
+- **Secure & Fast**: Enterprise-grade security with optimized performance
+
+## Quick Links
+
+- 🚀 [Quick Start Guide](quickstart.mdx) - Get up and running in minutes
+- 💻 [Development Guide](development.mdx) - Advanced configuration and customization
+- 🎨 [Customization](essentials/settings.mdx) - Personalize your ShellX.ai experience
+- 🔌 [API Reference](api-reference/introduction.mdx) - Integration and automation guides
+
+## Getting Started
+
+### Web Version
+Visit [shellx.toscl.com](https://shellx.toscl.com) to access ShellX.ai directly in your browser.
+
+### Android App
+Download the Android app from our official repository at [GitHub](https://github.com/10cl/shellx).
+
+### Local Development
+For developers interested in contributing or customizing ShellX.ai:
+
+```bash
+# Clone the repository
+git clone https://github.com/10cl/shellx.git
+
+# Navigate to the project directory
+cd shellx
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
-npm i -g mint
-```
 
-Run the following command at the root of your documentation (where docs.json is)
+## Support and Community
 
-```
-mint dev
-```
+- **GitHub Repository**: [https://github.com/10cl/shellx](https://github.com/10cl/shellx)
+- **Official Website**: [shellx.toscl.com](https://shellx.toscl.com)
+- **Issues and Bug Reports**: Use GitHub Issues for technical support
 
-### Publishing Changes
+## Contributing
 
-Install our Github App to auto propagate changes from your repo to your deployment. Changes will be deployed to production automatically after pushing to the default branch. Find the link to install on your dashboard. 
+We welcome contributions to ShellX.ai! Please read our contributing guidelines and submit pull requests to help improve the project.
 
-#### Troubleshooting
+## License
 
-- It the dev environment isn't running - Run `mint install` it'll re-install dependencies.
-- Page loads as a 404 - Make sure you are running in a folder with `docs.json`
+ShellX.ai is open-source software. Please refer to the LICENSE file in the repository for detailed information.

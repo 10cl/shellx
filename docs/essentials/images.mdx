@@ -1,59 +1,433 @@
 ---
-title: 'Images and Embeds'
-description: 'Add image, video, and other HTML elements'
+title: 'Interface & Features'
+description: 'Visual overview of ShellX.ai interface and features'
 icon: 'image'
 ---
 
-<img
-  style={{ borderRadius: '0.5rem' }}
-  src="https://mintlify-assets.b-cdn.net/bigbend.jpg"
-/>
+## Web Interface
 
-## Image
+ShellX.ai provides a modern, intuitive web interface that brings AI-powered terminal functionality to your browser.
 
-### Using Markdown
+### Main Terminal Interface
 
-The [markdown syntax](https://www.markdownguide.org/basic-syntax/#images) lets you add images using the following code
-
-```md
-![title](/path/image.jpg)
-```
-
-Note that the image file size must be less than 5MB. Otherwise, we recommend hosting on a service like [Cloudinary](https://cloudinary.com/) or [S3](https://aws.amazon.com/s3/). You can then use that URL and embed.
-
-### Using Embeds
-
-To get more customizability with images, you can also use [embeds](/writing-content/embed) to add images
+The main interface features a clean, responsive design with AI assistance built-in:
 
 ```html
-<img height="200" src="/path/image.jpg" />
+<!-- HTML structure for ShellX.ai interface -->
+<div class="shellx-container">
+  <div class="shellx-header">
+    <div class="shellx-logo">
+      <img src="/images/shellx-logo.png" alt="ShellX.ai Logo" />
+    </div>
+    <div class="shellx-controls">
+      <button class="ai-toggle">AI Assistant</button>
+      <button class="settings">Settings</button>
+    </div>
+  </div>
+  
+  <div class="shellx-terminal">
+    <div class="terminal-output" id="output"></div>
+    <div class="terminal-input">
+      <span class="prompt">shellx@ai:~$ </span>
+      <input type="text" id="command-input" placeholder="Type your command or ask AI..." />
+    </div>
+  </div>
+  
+  <div class="shellx-sidebar">
+    <div class="ai-suggestions">
+      <h3>AI Suggestions</h3>
+      <ul id="suggestions-list"></ul>
+    </div>
+    <div class="command-history">
+      <h3>Recent Commands</h3>
+      <ul id="history-list"></ul>
+    </div>
+  </div>
+</div>
 ```
 
-## Embeds and HTML elements
+### Dark Mode Interface
 
-<iframe
-  width="560"
-  height="315"
-  src="https://www.youtube.com/embed/4KzFe50RQkQ"
-  title="YouTube video player"
-  frameBorder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowFullScreen
-  style={{ width: '100%', borderRadius: '0.5rem' }}
-></iframe>
+ShellX.ai supports both light and dark themes for comfortable usage:
 
-<br />
+```css
+/* Dark theme styling */
+.shellx-container.dark {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
+.shellx-terminal.dark {
+  background-color: #2d2d2d;
+  border: 1px solid #444;
+}
+
+.terminal-input.dark input {
+  background-color: #333;
+  color: #fff;
+  border: none;
+}
+
+.prompt.dark {
+  color: #00ff00;
+}
+
+/* Light theme styling */
+.shellx-container.light {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.shellx-terminal.light {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+}
+```
+
+## Mobile Interface
+
+### Android App Screenshots
+
+The Android app provides full terminal functionality with AI assistance:
+
+<div style="display: flex; gap: 20px; margin: 20px 0;">
+  <div style="flex: 1;">
+    <img src="/images/android-main.png" alt="Android Main Interface" style="width: 100%; border-radius: 8px;" />
+    <p style="text-align: center; font-size: 14px; color: #666;">Main terminal interface on Android</p>
+  </div>
+  <div style="flex: 1;">
+    <img src="/images/android-ai-assistant.png" alt="Android AI Assistant" style="width: 100%; border-radius: 8px;" />
+    <p style="text-align: center; font-size: 14px; color: #666;">AI assistant panel</p>
+  </div>
+</div>
+
+### Responsive Design
+
+ShellX.ai adapts to different screen sizes:
+
+```css
+/* Mobile responsive design */
+@media (max-width: 768px) {
+  .shellx-container {
+    flex-direction: column;
+  }
+  
+  .shellx-sidebar {
+    width: 100%;
+    height: 200px;
+    order: 3;
+  }
+  
+  .shellx-terminal {
+    height: 60vh;
+  }
+  
+  .terminal-input input {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+@media (max-width: 480px) {
+  .shellx-header {
+    padding: 10px;
+  }
+  
+  .shellx-controls button {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+}
+```
+
+## AI Assistant Features
+
+### Command Suggestions
+
+The AI assistant provides intelligent command suggestions:
+
+```javascript
+// AI suggestion system
+class AISuggestionManager {
+  constructor() {
+    this.suggestions = [];
+    this.context = {};
+  }
+
+  async generateSuggestions(input) {
+    const response = await fetch('/api/ai/suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: input,
+        context: this.context
+      })
+    });
+
+    const suggestions = await response.json();
+    this.displaySuggestions(suggestions);
+  }
+
+  displaySuggestions(suggestions) {
+    const suggestionsList = document.getElementById('suggestions-list');
+    suggestionsList.innerHTML = '';
+
+    suggestions.forEach(suggestion => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <div class="suggestion-item">
+          <span class="suggestion-command">${suggestion.command}</span>
+          <span class="suggestion-description">${suggestion.description}</span>
+          <button onclick="applySuggestion('${suggestion.command}')">Apply</button>
+        </div>
+      `;
+      suggestionsList.appendChild(li);
+    });
+  }
+}
+```
+
+### Real-time Help
+
+Interactive help system with visual feedback:
+
+```html
+<!-- Help overlay -->
+<div class="help-overlay" id="help-overlay">
+  <div class="help-content">
+    <h2>AI Command Help</h2>
+    <div class="help-section">
+      <h3>Natural Language Commands</h3>
+      <div class="help-examples">
+        <div class="example">
+          <div class="user-input">"show me all files"</div>
+          <div class="ai-translation">→ ls -la</div>
+        </div>
+        <div class="example">
+          <div class="user-input">"find large files"</div>
+          <div class="ai-translation">→ find . -size +100M</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="help-section">
+      <h3>Quick Actions</h3>
+      <div class="quick-actions">
+        <button onclick="insertCommand('git status')">Git Status</button>
+        <button onclick="insertCommand('docker ps')">Docker Containers</button>
+        <button onclick="insertCommand('top')">System Monitor</button>
+      </div>
+    </div>
+    
+    <button class="close-help" onclick="closeHelp()">Close</button>
+  </div>
+</div>
+```
+
+## Command History Visualization
+
+### Interactive Command History
+
+Visual representation of command history with AI insights:
+
+```javascript
+// Command history with visual timeline
+class CommandHistoryVisualizer {
+  constructor() {
+    this.history = [];
+    this.container = document.getElementById('history-container');
+  }
+
+  addCommand(command, result) {
+    const historyItem = {
+      id: Date.now(),
+      command: command,
+      result: result,
+      timestamp: new Date(),
+      success: result.success
+    };
+
+    this.history.unshift(historyItem);
+    this.renderHistory();
+  }
+
+  renderHistory() {
+    this.container.innerHTML = '';
+    
+    this.history.forEach(item => {
+      const historyElement = document.createElement('div');
+      historyElement.className = `history-item ${item.success ? 'success' : 'error'}`;
+      historyElement.innerHTML = `
+        <div class="history-header">
+          <span class="timestamp">${item.timestamp.toLocaleTimeString()}</span>
+          <span class="status ${item.success ? 'success' : 'error'}">
+            ${item.success ? '✓' : '✗'}
+          </span>
+        </div>
+        <div class="command">${item.command}</div>
+        <div class="result-preview">${this.truncateOutput(item.result.output)}</div>
+        <div class="actions">
+          <button onclick="repeatCommand('${item.command}')">Repeat</button>
+          <button onclick="explainCommand('${item.command}')">Explain</button>
+        </div>
+      `;
+      
+      this.container.appendChild(historyElement);
+    });
+  }
+
+  truncateOutput(output) {
+    return output.length > 100 ? output.substring(0, 100) + '...' : output;
+  }
+}
+```
+
+## Performance Monitoring
+
+### Real-time Performance Metrics
+
+Visual indicators for system performance:
+
+```html
+<!-- Performance dashboard -->
+<div class="performance-dashboard">
+  <div class="metric-card">
+    <h3>AI Response Time</h3>
+    <div class="metric-value" id="ai-response-time">0ms</div>
+    <div class="metric-chart">
+      <canvas id="response-time-chart"></canvas>
+    </div>
+  </div>
+  
+  <div class="metric-card">
+    <h3>Command Execution</h3>
+    <div class="metric-value" id="command-execution">0ms</div>
+    <div class="metric-chart">
+      <canvas id="execution-chart"></canvas>
+    </div>
+  </div>
+  
+  <div class="metric-card">
+    <h3>Success Rate</h3>
+    <div class="metric-value" id="success-rate">100%</div>
+    <div class="metric-progress">
+      <div class="progress-bar" id="success-progress"></div>
+    </div>
+  </div>
+</div>
+```
+
+### Performance Monitoring Script
+
+```javascript
+// Performance monitoring
+class PerformanceMonitor {
+  constructor() {
+    this.metrics = {
+      aiResponseTimes: [],
+      commandExecutionTimes: [],
+      successRate: 1.0
+    };
+    this.startTime = null;
+  }
+
+  startCommand() {
+    this.startTime = performance.now();
+  }
+
+  endCommand(success) {
+    const endTime = performance.now();
+    const duration = endTime - this.startTime;
+    
+    this.metrics.commandExecutionTimes.push(duration);
+    this.updateSuccessRate(success);
+    this.updateUI();
+  }
+
+  recordAIResponse(responseTime) {
+    this.metrics.aiResponseTimes.push(responseTime);
+    this.updateUI();
+  }
+
+  updateSuccessRate(success) {
+    const recentCommands = this.metrics.commandExecutionTimes.slice(-10);
+    const successCount = recentCommands.filter(cmd => cmd.success).length;
+    this.metrics.successRate = successCount / recentCommands.length;
+  }
+
+  updateUI() {
+    // Update response time
+    const avgResponseTime = this.getAverage(this.metrics.aiResponseTimes);
+    document.getElementById('ai-response-time').textContent = `${avgResponseTime}ms`;
+    
+    // Update execution time
+    const avgExecutionTime = this.getAverage(this.metrics.commandExecutionTimes);
+    document.getElementById('command-execution').textContent = `${avgExecutionTime}ms`;
+    
+    // Update success rate
+    const successPercentage = Math.round(this.metrics.successRate * 100);
+    document.getElementById('success-rate').textContent = `${successPercentage}%`;
+    
+    // Update progress bar
+    const progressBar = document.getElementById('success-progress');
+    progressBar.style.width = `${successPercentage}%`;
+  }
+
+  getAverage(array) {
+    if (array.length === 0) return 0;
+    const sum = array.reduce((a, b) => a + b, 0);
+    return Math.round(sum / array.length);
+  }
+}
+```
+
+## Customization Options
+
+### Theme Customization
+
+Users can customize the interface appearance:
+
+```css
+/* Custom theme variables */
+:root {
+  --shellx-primary: #007bff;
+  --shellx-secondary: #6c757d;
+  --shellx-success: #28a745;
+  --shellx-warning: #ffc107;
+  --shellx-error: #dc3545;
+  --shellx-background: #ffffff;
+  --shellx-text: #333333;
+  --shellx-border: #e9ecef;
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] {
+  --shellx-primary: #0d6efd;
+  --shellx-secondary: #6c757d;
+  --shellx-success: #198754;
+  --shellx-warning: #ffc107;
+  --shellx-error: #dc3545;
+  --shellx-background: #212529;
+  --shellx-text: #ffffff;
+  --shellx-border: #495057;
+}
+
+/* Apply theme variables */
+.shellx-container {
+  background-color: var(--shellx-background);
+  color: var(--shellx-text);
+  border-color: var(--shellx-border);
+}
+
+.btn-primary {
+  background-color: var(--shellx-primary);
+  border-color: var(--shellx-primary);
+}
+```
+
+<Note>
+  All interface elements are responsive and work seamlessly across desktop, tablet, and mobile devices.
+</Note>
 
 <Tip>
-
-Mintlify supports [HTML tags in Markdown](https://www.markdownguide.org/basic-syntax/#html). This is helpful if you prefer HTML tags to Markdown syntax, and lets you create documentation with infinite flexibility.
-
+  Use the theme customization options to match ShellX.ai with your development environment or brand colors.
 </Tip>
-
-### iFrames
-
-Loads another HTML page within the document. Most commonly used for embedding videos.
-
-```html
-<iframe src="https://www.youtube.com/embed/4KzFe50RQkQ"> </iframe>
-```

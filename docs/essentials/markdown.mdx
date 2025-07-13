@@ -1,88 +1,213 @@
 ---
-title: 'Markdown Syntax'
-description: 'Text, title, and styling in standard markdown'
-icon: 'text-size'
+title: 'AI Command Syntax'
+description: 'Learn how to use natural language commands with ShellX.ai'
+icon: 'robot'
 ---
 
-## Titles
+## Natural Language Commands
 
-Best used for section headers.
+ShellX.ai transforms natural language into terminal commands using advanced AI. Simply type what you want to do, and the AI will interpret and execute the appropriate command.
 
-```md
-## Titles
+```bash
+# Natural language input
+shellx "show me all files in the current directory"
+
+# AI translates to:
+ls -la
 ```
 
-### Subtitles
+### Basic File Operations
 
-Best use to subsection headers.
+Use natural language for common file operations:
 
-```md
-### Subtitles
+```bash
+# List files
+shellx "list all files"
+shellx "show hidden files"
+
+# Create files
+shellx "create a new file called test.txt"
+shellx "make a directory named projects"
+
+# Copy and move
+shellx "copy file1.txt to backup folder"
+shellx "move all .js files to src directory"
 ```
 
 <Tip>
 
-Each **title** and **subtitle** creates an anchor and also shows up on the table of contents on the right.
+The AI learns from your usage patterns and becomes more accurate over time. The more you use ShellX.ai, the better it understands your preferences.
 
 </Tip>
 
-## Text Formatting
+## AI-Powered Text Processing
 
-We support most markdown formatting. Simply add `**`, `_`, or `~` around text to format it.
+ShellX.ai excels at text manipulation and processing tasks:
 
-| Style         | How to write it   | Result          |
+| Task | Natural Language | AI Command |
 | ------------- | ----------------- | --------------- |
-| Bold          | `**bold**`        | **bold**        |
-| Italic        | `_italic_`        | _italic_        |
-| Strikethrough | `~strikethrough~` | ~strikethrough~ |
+| Search | `"find all files containing 'error'"` | `grep -r "error" .` |
+| Replace | `"replace 'old' with 'new' in all files"` | `sed -i 's/old/new/g' *` |
+| Count | `"count lines in all .txt files"` | `wc -l *.txt` |
 
-You can combine these. For example, write `**_bold and italic_**` to get **_bold and italic_** text.
+### Advanced Text Operations
 
-You need to use HTML to write superscript and subscript text. That is, add `<sup>` or `<sub>` around your text.
+```bash
+# Text analysis
+shellx "analyze this log file for errors"
+shellx "extract email addresses from contacts.txt"
+shellx "count unique words in document.txt"
 
-| Text Size   | How to write it          | Result                 |
-| ----------- | ------------------------ | ---------------------- |
-| Superscript | `<sup>superscript</sup>` | <sup>superscript</sup> |
-| Subscript   | `<sub>subscript</sub>`   | <sub>subscript</sub>   |
-
-## Linking to Pages
-
-You can add a link by wrapping text in `[]()`. You would write `[link to google](https://google.com)` to [link to google](https://google.com).
-
-Links to pages in your docs need to be root-relative. Basically, you should include the entire folder path. For example, `[link to text](/writing-content/text)` links to the page "Text" in our components section.
-
-Relative links like `[link to text](../text)` will open slower because we cannot optimize them as easily.
-
-## Blockquotes
-
-### Singleline
-
-To create a blockquote, add a `>` in front of a paragraph.
-
-> Dorothy followed her through many of the beautiful rooms in her castle.
-
-```md
-> Dorothy followed her through many of the beautiful rooms in her castle.
+# File processing
+shellx "convert all .md files to .html"
+shellx "compress all images in the photos folder"
 ```
 
-### Multiline
+## System Information Commands
 
-> Dorothy followed her through many of the beautiful rooms in her castle.
->
-> The Witch bade her clean the pots and kettles and sweep the floor and keep the fire fed with wood.
+Get system information using natural language:
 
-```md
-> Dorothy followed her through many of the beautiful rooms in her castle.
->
-> The Witch bade her clean the pots and kettles and sweep the floor and keep the fire fed with wood.
+```bash
+# System status
+shellx "show system resources"
+shellx "check disk usage"
+shellx "display running processes"
+
+# Network information
+shellx "show network connections"
+shellx "check internet connectivity"
+shellx "display wifi information"
 ```
 
-### LaTeX
+## AI Assistant Features
 
-Mintlify supports [LaTeX](https://www.latex-project.org) through the Latex component.
+### Smart Suggestions
 
-<Latex>8 x (vk x H1 - H2) = (0,1)</Latex>
+The AI provides intelligent suggestions based on context:
 
-```md
-<Latex>8 x (vk x H1 - H2) = (0,1)</Latex>
+```bash
+# Typing "shellx git" will suggest:
+# - "commit all changes"
+# - "push to remote repository"
+# - "check status"
+# - "create new branch"
 ```
+
+### Error Explanation
+
+When commands fail, ShellX.ai explains the error and suggests solutions:
+
+```bash
+# Error occurred
+shellx "delete important.txt"
+# AI Response: "File not found. Did you mean 'important_backup.txt'?"
+# Suggestion: "Use 'ls' to see available files"
+```
+
+### Learning Mode
+
+Enable learning mode to understand new commands:
+
+```bash
+# Enable learning mode
+shellx --learn
+
+# Teach new patterns
+shellx "backup project" --define "tar -czf backup.tar.gz project/"
+```
+
+## Code Generation
+
+ShellX.ai can generate scripts and code snippets:
+
+### Script Generation
+
+```bash
+# Generate backup script
+shellx "create a backup script for my documents"
+
+# Generate deployment script
+shellx "make a script to deploy my web app"
+```
+
+### Code Assistance
+
+```bash
+# Code analysis
+shellx "analyze this Python file for bugs"
+shellx "optimize this shell script"
+shellx "explain this regular expression"
+```
+
+## Customization
+
+### Personal Preferences
+
+Configure ShellX.ai to match your workflow:
+
+```bash
+# Set preferred commands
+shellx config set list-command "ls -la"
+shellx config set editor "vim"
+
+# Configure AI behavior
+shellx config set ai-temperature 0.7
+shellx config set response-length short
+```
+
+### Custom Commands
+
+Create custom command aliases:
+
+```bash
+# Create alias
+shellx alias "backup docs" "tar -czf docs_backup.tar.gz ~/Documents/"
+
+# Use alias
+shellx "backup docs"
+```
+
+<Note>
+  ShellX.ai supports multiple AI models. You can switch between them using `shellx config set model <model-name>`.
+</Note>
+
+## Integration with Development Tools
+
+### Git Integration
+
+```bash
+# Git operations
+shellx "commit all changes with message 'fix bugs'"
+shellx "create new branch for feature"
+shellx "merge develop branch"
+```
+
+### Docker Integration
+
+```bash
+# Docker operations
+shellx "build docker image for this project"
+shellx "run container with port 3000"
+shellx "stop all running containers"
+```
+
+### Package Management
+
+```bash
+# NPM/Yarn operations
+shellx "install dependencies"
+shellx "update all packages"
+shellx "remove unused packages"
+```
+
+## Best Practices
+
+1. **Be Specific**: More specific commands get better results
+2. **Use Context**: Reference current directory and files
+3. **Learn from Feedback**: Review AI suggestions and corrections
+4. **Combine Commands**: Chain multiple operations in one request
+5. **Use Aliases**: Create shortcuts for frequently used commands
+
+<Tip>
+  Use `shellx help` to see all available AI commands and features.
+</Tip>
