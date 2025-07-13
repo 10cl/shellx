@@ -3,12 +3,11 @@ plugins {
 }
 
 android {
-    compileSdk 34
-    namespace 'com.toscl.shellx'
+    compileSdk 32
 
     defaultConfig {
         minSdk 23
-        targetSdk 34
+        targetSdk 32
     }
 
     buildTypes {
@@ -20,6 +19,9 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    dexOptions {
+        additionalParameters += ['--no-locals']
     }
 
     sourceSets {

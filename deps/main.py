@@ -182,7 +182,9 @@ def process_device(device_id, apk_path):
 
 def main():
     # Get APK path
-    apk_path = Path("shellx.apk")
+    # script_dir = Path(__file__).parent
+    # apk_path = script_dir.parent / "app" / "build" / "outputs" / "apk" / "debug" / "app-debug.apk"
+    apk_path = "shellx.apk"
     if not apk_path.exists():
         print(f"Error: APK not found at {apk_path}")
         sys.exit(1)
