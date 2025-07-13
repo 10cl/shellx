@@ -445,6 +445,43 @@ jobs:
         with:
           path: release/
 
+      - name: Download and rename APK
+        run: |
+          VERSION=${{ env.VERSION }}
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${VERSION}.apk"
+          
+          echo "Downloading APK from: ${APK_URL}"
+          
+          # 尝试下载 APK 文件
+          if wget -O "shellx.apk" "${APK_URL}"; then
+            echo "Successfully downloaded APK and renamed to shellx.apk"
+            
+            # 验证文件是否为有效的 APK 文件
+            if file shellx.apk | grep -q "Android"; then
+              echo "APK file validation successful"
+              
+              # 生成 APK 的 SHA256 校验和
+              sha256sum "shellx.apk" > "shellx.apk.sha256"
+              
+              # 移动到 release 目录
+              mv "shellx.apk" "shellx.apk.sha256" release/
+              
+              # 显示文件信息
+              echo "APK file info:"
+              ls -la release/shellx.apk
+              echo "APK SHA256:"
+              cat release/shellx.apk.sha256
+            else
+              echo "Warning: Downloaded file may not be a valid APK"
+              # 即使验证失败，也保留文件，让用户决定
+              sha256sum "shellx.apk" > "shellx.apk.sha256"
+              mv "shellx.apk" "shellx.apk.sha256" release/
+            fi
+          else
+            echo "Failed to download APK from ${APK_URL}"
+            echo "This might be expected if the APK for version ${VERSION} doesn't exist yet"
+          fi
+
       - name: Generate checksums
         run: |
           cd release
