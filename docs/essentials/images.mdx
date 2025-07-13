@@ -48,7 +48,7 @@ The main interface features a clean, responsive design with AI assistance built-
 
 ### Dark Mode Interface
 
-ShellX.ai supports both light and dark themes for comfortable usage:
+ShellX.ai features a sleek black-themed interface as the default, with optional light theme support for comfortable usage:
 
 ```css
 /* Dark theme styling */
@@ -387,28 +387,28 @@ class PerformanceMonitor {
 Users can customize the interface appearance:
 
 ```css
-/* Custom theme variables */
+/* Custom theme variables - ShellX.ai Black Theme */
 :root {
-  --shellx-primary: #007bff;
+  --shellx-primary: #000000;
+  --shellx-secondary: #333333;
+  --shellx-success: #00ff00;
+  --shellx-warning: #ffbd2e;
+  --shellx-error: #ff5f56;
+  --shellx-background: #000000;
+  --shellx-text: #ffffff;
+  --shellx-border: #333333;
+}
+
+/* Light theme overrides (alternative) */
+[data-theme="light"] {
+  --shellx-primary: #000000;
   --shellx-secondary: #6c757d;
   --shellx-success: #28a745;
   --shellx-warning: #ffc107;
   --shellx-error: #dc3545;
   --shellx-background: #ffffff;
-  --shellx-text: #333333;
+  --shellx-text: #000000;
   --shellx-border: #e9ecef;
-}
-
-/* Dark theme overrides */
-[data-theme="dark"] {
-  --shellx-primary: #0d6efd;
-  --shellx-secondary: #6c757d;
-  --shellx-success: #198754;
-  --shellx-warning: #ffc107;
-  --shellx-error: #dc3545;
-  --shellx-background: #212529;
-  --shellx-text: #ffffff;
-  --shellx-border: #495057;
 }
 
 /* Apply theme variables */

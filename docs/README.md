@@ -24,7 +24,7 @@ ShellX.ai combines the power of artificial intelligence with traditional termina
 ## Getting Started
 
 ### Web Version
-Visit [shellx.toscl.com](https://shellx.toscl.com) to access ShellX.ai directly in your browser.
+Visit [shellx.ai](https://shellx.ai) to access ShellX.ai directly in your browser.
 
 ### Android App
 Download the Android app from our official repository at [GitHub](https://github.com/10cl/shellx).
@@ -49,7 +49,7 @@ npm run dev
 ## Support and Community
 
 - **GitHub Repository**: [https://github.com/10cl/shellx](https://github.com/10cl/shellx)
-- **Official Website**: [shellx.toscl.com](https://shellx.toscl.com)
+- **Official Website**: [shellx.ai](https://shellx.ai)
 - **Issues and Bug Reports**: Use GitHub Issues for technical support
 
 ## Contributing

@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "ShellX.ai Documentation",
   "colors": {
-    "primary": "#0066CC",
-    "light": "#00AAFF",
-    "dark": "#004499"
+    "primary": "#000000",
+    "light": "#333333",
+    "dark": "#000000"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -64,7 +64,7 @@
         },
         {
           "anchor": "Web App",
-          "href": "https://shellx.toscl.com",
+          "href": "https://shellx.ai",
           "icon": "globe"
         },
         {
@@ -76,8 +76,8 @@
     }
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/shellx-light.svg",
+    "dark": "/logo/shellx-dark.svg"
   },
   "navbar": {
     "links": [
@@ -89,13 +89,13 @@
     "primary": {
       "type": "button",
       "label": "Launch App",
-      "href": "https://shellx.toscl.com"
+      "href": "https://shellx.ai"
     }
   },
   "footer": {
     "socials": {
       "github": "https://github.com/10cl/shellx",
-      "website": "https://shellx.toscl.com"
+      "website": "https://shellx.ai"
     }
   }
 }
