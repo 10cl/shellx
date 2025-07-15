@@ -320,11 +320,10 @@ jobs:
           
           echo "Attempting to download APK from: $APK_URL"
           
-          # Download with retries and error handling
-          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx-${CLEAN_VERSION}.apk" "$APK_URL"; then
-            echo "APK downloaded successfully"
+          # Download directly as shellx.apk with retries and error handling
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
             echo "download_success=true" >> $GITHUB_OUTPUT
-            echo "apk_file=shellx-${CLEAN_VERSION}.apk" >> $GITHUB_OUTPUT
           else
             echo "Failed to download APK from $APK_URL"
             echo "download_success=false" >> $GITHUB_OUTPUT
@@ -334,16 +333,14 @@ jobs:
       - name: Validate APK file
         if: steps.download_apk.outputs.download_success == 'true'
         run: |
-          APK_FILE="${{ steps.download_apk.outputs.apk_file }}"
-          
           # Check if file exists and is not empty
-          if [ ! -s "$APK_FILE" ]; then
+          if [ ! -s "shellx.apk" ]; then
             echo "APK file is empty or does not exist"
             exit 1
           fi
           
           # Use file command to check for Android APK signature
-          FILE_TYPE=$(file "$APK_FILE")
+          FILE_TYPE=$(file "shellx.apk")
           echo "File type: $FILE_TYPE"
           
           # Check for APK/ZIP signature (APK files are ZIP archives)
@@ -355,15 +352,9 @@ jobs:
             exit 1
           fi
 
-      - name: Rename APK and generate checksum
+      - name: Generate checksum and move to release
         if: steps.download_apk.outputs.download_success == 'true'
         run: |
-          APK_FILE="${{ steps.download_apk.outputs.apk_file }}"
-          
-          # Rename to shellx.apk
-          mv "$APK_FILE" "shellx.apk"
-          echo "Renamed $APK_FILE to shellx.apk"
-          
           # Generate SHA256 checksum
           sha256sum "shellx.apk" > "shellx.apk.sha256"
           echo "Generated SHA256 checksum:"
