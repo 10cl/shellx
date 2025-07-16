@@ -316,7 +316,7 @@ jobs:
           VERSION="${{ env.VERSION }}"
           # Remove 'v' prefix if present for URL construction
           CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
-          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.apk"
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
           
           echo "Attempting to download APK from: $APK_URL"
           
