@@ -17,7 +17,6 @@ env:
   ADB_BASE_DIR: 'deps/work/install'  # Base directory for final ADB path
   MAIN_PY_FILE: 'deps/main.py'       # Main program entry point
 
-
 jobs:
   # -------------------------- Build Stage: Generate intermediate artifacts by OS + architecture --------------------------
   build-windows-x86:
@@ -68,8 +67,37 @@ jobs:
 
       - name: Copy ADB to dist
         run: |
-          cp ${{ env.ADB_BASE_DIR }}/adb-windows/adb.exe dist/adb.exe
+          cp ${{ env.ADB_BASE_DIR }}/adb-windows/* dist/
           ls -l dist/
+        shell: bash
+
+      - name: Download and validate APK
+        run: |
+          VERSION="${{ env.VERSION }}"
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
+          echo "Attempting to download APK from: $APK_URL"
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
+            if [ ! -s "shellx.apk" ]; then
+              echo "APK file is empty or does not exist"
+              rm -f shellx.apk
+            else
+              FILE_TYPE=$(file "shellx.apk")
+              echo "File type: $FILE_TYPE"
+              if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
+                echo "APK file validation passed"
+                sha256sum "shellx.apk" > "shellx.apk.sha256"
+                mv "shellx.apk" dist/
+                mv "shellx.apk.sha256" dist/
+              else
+                echo "APK file validation failed - not a valid APK/ZIP file"
+                rm -f shellx.apk
+              fi
+            fi
+          else
+            echo "APK download failed, skipping APK inclusion"
+          fi
         shell: bash
 
       - name: Upload intermediate artifact
@@ -78,7 +106,6 @@ jobs:
           name: build-win-x86
           path: dist/
           retention-days: 1
-
 
   build-windows-x64:
     runs-on: windows-latest
@@ -127,7 +154,36 @@ jobs:
 
       - name: Copy ADB to dist
         run: |
-          cp ${{ env.ADB_BASE_DIR }}/adb-windows/adb.exe dist/adb.exe
+          cp ${{ env.ADB_BASE_DIR }}/adb-windows/* dist/
+        shell: bash
+
+      - name: Download and validate APK
+        run: |
+          VERSION="${{ env.VERSION }}"
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
+          echo "Attempting to download APK from: $APK_URL"
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
+            if [ ! -s "shellx.apk" ]; then
+              echo "APK file is empty or does not exist"
+              rm -f shellx.apk
+            else
+              FILE_TYPE=$(file "shellx.apk")
+              echo "File type: $FILE_TYPE"
+              if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
+                echo "APK file validation passed"
+                sha256sum "shellx.apk" > "shellx.apk.sha256"
+                mv "shellx.apk" dist/
+                mv "shellx.apk.sha256" dist/
+              else
+                echo "APK file validation failed - not a valid APK/ZIP file"
+                rm -f shellx.apk
+              fi
+            fi
+          else
+            echo "APK download failed, skipping APK inclusion"
+          fi
         shell: bash
 
       - name: Upload intermediate artifact
@@ -136,7 +192,6 @@ jobs:
           name: build-win-x64
           path: dist/
           retention-days: 1
-
 
   build-linux-x86_64:
     runs-on: ubuntu-22.04
@@ -158,7 +213,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pyinstaller
-          sudo apt update && sudo apt install -y zip unzip wget
+          sudo apt update && sudo apt install -y zip unzip wget file
 
       - name: Clean previous builds
         run: |
@@ -181,7 +236,35 @@ jobs:
 
       - name: Copy ADB to dist
         run: |
-          cp ${{ env.ADB_BASE_DIR }}/adb-linux/adb dist/adb
+          cp ${{ env.ADB_BASE_DIR }}/adb-linux/* dist/
+
+      - name: Download and validate APK
+        run: |
+          VERSION="${{ env.VERSION }}"
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
+          echo "Attempting to download APK from: $APK_URL"
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
+            if [ ! -s "shellx.apk" ]; then
+              echo "APK file is empty or does not exist"
+              rm -f shellx.apk
+            else
+              FILE_TYPE=$(file "shellx.apk")
+              echo "File type: $FILE_TYPE"
+              if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
+                echo "APK file validation passed"
+                sha256sum "shellx.apk" > "shellx.apk.sha256"
+                mv "shellx.apk" dist/
+                mv "shellx.apk.sha256" dist/
+              else
+                echo "APK file validation failed - not a valid APK/ZIP file"
+                rm -f shellx.apk
+              fi
+            fi
+          else
+            echo "APK download failed, skipping APK inclusion"
+          fi
 
       - name: Upload intermediate artifact
         uses: actions/upload-artifact@v4
@@ -189,7 +272,6 @@ jobs:
           name: build-linux-x86_64
           path: dist/
           retention-days: 1
-
 
   build-macos-x86_64:
     runs-on: macos-13  # x86_64 architecture
@@ -211,7 +293,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pyinstaller
-          brew install zip wget
+          brew install zip wget file
 
       - name: Clean previous builds
         run: |
@@ -234,7 +316,35 @@ jobs:
 
       - name: Copy ADB to dist
         run: |
-          cp ${{ env.ADB_BASE_DIR }}/adb-macos/adb dist/adb
+          cp ${{ env.ADB_BASE_DIR }}/adb-macos/* dist/
+
+      - name: Download and validate APK
+        run: |
+          VERSION="${{ env.VERSION }}"
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
+          echo "Attempting to download APK from: $APK_URL"
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
+            if [ ! -s "shellx.apk" ]; then
+              echo "APK file is empty or does not exist"
+              rm -f shellx.apk
+            else
+              FILE_TYPE=$(file "shellx.apk")
+              echo "File type: $FILE_TYPE"
+              if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
+                echo "APK file validation passed"
+                shasum -a 256 "shellx.apk" > "shellx.apk.sha256"
+                mv "shellx.apk" dist/
+                mv "shellx.apk.sha256" dist/
+              else
+                echo "APK file validation failed - not a valid APK/ZIP file"
+                rm -f shellx.apk
+              fi
+            fi
+          else
+            echo "APK download failed, skipping APK inclusion"
+          fi
 
       - name: Upload intermediate artifact
         uses: actions/upload-artifact@v4
@@ -242,7 +352,6 @@ jobs:
           name: build-macos-x86_64
           path: dist/
           retention-days: 1
-
 
   build-macos-aarch64:
     runs-on: macos-latest  # Apple Silicon (aarch64)
@@ -264,7 +373,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pyinstaller
-          brew install zip wget
+          brew install zip wget file
 
       - name: Clean previous builds
         run: |
@@ -287,7 +396,35 @@ jobs:
 
       - name: Copy ADB to dist
         run: |
-          cp ${{ env.ADB_BASE_DIR }}/adb-macos/adb dist/adb
+          cp ${{ env.ADB_BASE_DIR }}/adb-macos/* dist/
+
+      - name: Download and validate APK
+        run: |
+          VERSION="${{ env.VERSION }}"
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
+          echo "Attempting to download APK from: $APK_URL"
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
+            if [ ! -s "shellx.apk" ]; then
+              echo "APK file is empty or does not exist"
+              rm -f shellx.apk
+            else
+              FILE_TYPE=$(file "shellx.apk")
+              echo "File type: $FILE_TYPE"
+              if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
+                echo "APK file validation passed"
+                shasum -a 256 "shellx.apk" > "shellx.apk.sha256"
+                mv "shellx.apk" dist/
+                mv "shellx.apk.sha256" dist/
+              else
+                echo "APK file validation failed - not a valid APK/ZIP file"
+                rm -f shellx.apk
+              fi
+            fi
+          else
+            echo "APK download failed, skipping APK inclusion"
+          fi
 
       - name: Upload intermediate artifact
         uses: actions/upload-artifact@v4
@@ -295,95 +432,6 @@ jobs:
           name: build-macos-aarch64
           path: dist/
           retention-days: 1
-
-
-  # -------------------------- APK Download Stage: Download and process APK file --------------------------
-  download-apk:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install required tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget file coreutils
-
-      - name: Create release directory
-        run: |
-          mkdir -p release
-
-      - name: Download APK with version substitution
-        id: download_apk
-        run: |
-          VERSION="${{ env.VERSION }}"
-          # Remove 'v' prefix if present for URL construction
-          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
-          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
-          
-          echo "Attempting to download APK from: $APK_URL"
-          
-          # Download directly as shellx.apk with retries and error handling
-          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
-            echo "APK downloaded successfully as shellx.apk"
-            echo "download_success=true" >> $GITHUB_OUTPUT
-          else
-            echo "Failed to download APK from $APK_URL"
-            echo "download_success=false" >> $GITHUB_OUTPUT
-            exit 0  # Don't fail the job, just skip APK processing
-          fi
-
-      - name: Validate APK file
-        if: steps.download_apk.outputs.download_success == 'true'
-        run: |
-          # Check if file exists and is not empty
-          if [ ! -s "shellx.apk" ]; then
-            echo "APK file is empty or does not exist"
-            exit 1
-          fi
-          
-          # Use file command to check for Android APK signature
-          FILE_TYPE=$(file "shellx.apk")
-          echo "File type: $FILE_TYPE"
-          
-          # Check for APK/ZIP signature (APK files are ZIP archives)
-          if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
-            echo "APK file validation passed"
-          else
-            echo "APK file validation failed - not a valid APK/ZIP file"
-            echo "Expected ZIP/Android archive, got: $FILE_TYPE"
-            exit 1
-          fi
-
-      - name: Generate checksum and move to release
-        if: steps.download_apk.outputs.download_success == 'true'
-        run: |
-          # Generate SHA256 checksum
-          sha256sum "shellx.apk" > "shellx.apk.sha256"
-          echo "Generated SHA256 checksum:"
-          cat "shellx.apk.sha256"
-          
-          # Move files to release directory
-          mv "shellx.apk" "release/"
-          mv "shellx.apk.sha256" "release/"
-          
-          echo "Files moved to release/ directory"
-          ls -la release/
-
-      - name: Handle download failure
-        if: steps.download_apk.outputs.download_success == 'false'
-        run: |
-          echo "APK download failed, but continuing with other artifacts"
-          echo "This may be expected if the APK for version ${{ env.VERSION }} doesn't exist yet"
-          
-          # Create a placeholder file to indicate APK was not available
-          echo "APK for version ${{ env.VERSION }} was not available at download time" > release/apk_not_available.txt
-          echo "Download attempted from: https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${{ env.VERSION }}.apk" >> release/apk_not_available.txt
-
-      - name: Upload APK artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: shellx-apk-${{ env.VERSION }}
-          path: release/
-          retention-days: 30
-
 
   # -------------------------- Packaging Stage: Integrate intermediate artifacts and generate final zip packages --------------------------
   package-win-x86:
@@ -409,7 +457,6 @@ jobs:
           path: ./*.zip
           retention-days: 7
 
-
   package-win-x64:
     needs: build-windows-x64
     runs-on: ubuntu-latest
@@ -432,7 +479,6 @@ jobs:
           name: ${{ env.APP_NAME }}-win-x64-${{ env.VERSION }}
           path: ./*.zip
           retention-days: 7
-
 
   package-linux-x86_64:
     needs: build-linux-x86_64
@@ -460,7 +506,6 @@ jobs:
           path: ./*.zip
           retention-days: 7
 
-
   package-macos-x86_64:
     needs: build-macos-x86_64
     runs-on: ubuntu-latest
@@ -486,7 +531,6 @@ jobs:
           name: ${{ env.APP_NAME }}-macos-x86_64-${{ env.VERSION }}
           path: ./*.zip
           retention-days: 7
-
 
   package-macos-aarch64:
     needs: build-macos-aarch64
@@ -514,7 +558,6 @@ jobs:
           path: ./*.zip
           retention-days: 7
 
-
   # -------------------------- Release Summary: Collect all final artifacts --------------------------
   release:
     needs:
@@ -523,7 +566,6 @@ jobs:
       - package-linux-x86_64
       - package-macos-x86_64
       - package-macos-aarch64
-      - download-apk
     runs-on: ubuntu-latest
     steps:
       - name: Install wget and coreutils for Ubuntu
@@ -539,8 +581,6 @@ jobs:
           cd release
           # Generate checksums for ZIP files
           find . -type f -name "*.zip" -exec sh -c 'for file do sha256sum "$file" > "$file.sha256"; done' sh {} +
-          
-          # Note: APK checksums are generated in the download-apk job, no need to regenerate
           
           # Display all files in release directory
           echo "Files in release directory:"

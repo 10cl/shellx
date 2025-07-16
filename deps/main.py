@@ -8,6 +8,34 @@ import webbrowser
 from pathlib import Path
 from datetime import datetime, timedelta
 
+def get_adb_cmd():
+    """
+    Returns the correct adb command for the current platform.
+    On Windows, use 'adb.exe' if available, otherwise 'adb'.
+    On Unix, use './adb' if present, otherwise 'adb'.
+    """
+    # Check for environment variable override
+    adb_env = os.environ.get("ADB_PATH")
+    if adb_env:
+        return adb_env
+
+    if os.name == "nt":
+        # Windows
+        if Path("adb.exe").exists():
+            return "adb.exe"
+        elif Path("./adb.exe").exists():
+            return "./adb.exe"
+        else:
+            return "adb"
+    else:
+        # Unix-like
+        if Path("./adb").exists():
+            return "./adb"
+        else:
+            return "adb"
+
+ADB_CMD = get_adb_cmd()
+
 def run_command(command):
     """Run a command and return its output"""
     try:
@@ -20,7 +48,7 @@ def run_command(command):
 
 def get_connected_devices():
     """Get the list of connected devices"""
-    output = run_command("./adb devices")
+    output = run_command(f"{ADB_CMD} devices")
     if not output:
         return []
     
@@ -35,7 +63,7 @@ def get_connected_devices():
 def uninstall_apk(device_id):
     """Uninstall the APK from the specified device"""
     print(f"Uninstalling APK from device {device_id}...")
-    result = run_command(f"./adb -s {device_id} uninstall com.toscl.shellx")
+    result = run_command(f"{ADB_CMD} -s {device_id} uninstall com.toscl.shellx")
     if result and "Success" in result:
         print(f"Successfully uninstalled APK from device {device_id}")
         return True
@@ -46,7 +74,7 @@ def uninstall_apk(device_id):
 def setup_port_forwarding(device_id):
     """Set up port forwarding"""
     print(f"Setting up port forwarding for device {device_id}...")
-    result = run_command(f"./adb -s {device_id} forward tcp:9091 tcp:9091")
+    result = run_command(f"{ADB_CMD} -s {device_id} forward tcp:9091 tcp:9091")
     if result is not None:
         print(f"Successfully set up port forwarding for device {device_id}")
         return True
@@ -57,7 +85,7 @@ def setup_port_forwarding(device_id):
 def install_apk(device_id, apk_path):
     """Install the APK to the specified device"""
     print(f"Installing APK to device {device_id}...")
-    result = run_command(f"./adb -s {device_id} install -r {apk_path}")
+    result = run_command(f"{ADB_CMD} -s {device_id} install -r {apk_path}")
     if result and "Success" in result:
         print(f"Successfully installed APK on device {device_id}")
         return True
@@ -68,7 +96,7 @@ def install_apk(device_id, apk_path):
 def start_main_activity(device_id):
     """Start MainActivity"""
     print(f"Starting MainActivity on device {device_id}...")
-    result = run_command(f"./adb -s {device_id} shell am start -n com.toscl.shellx/.MainActivity")
+    result = run_command(f"{ADB_CMD} -s {device_id} shell am start -n com.toscl.shellx/.MainActivity")
     # if result and "Success" in result:
     #     print(f"Successfully started MainActivity on device {device_id}")
     #     return True
@@ -82,7 +110,7 @@ def start_main_activity(device_id):
 def execute_shell_script(device_id):
     """Execute shell script and return the URL from the output"""
     print(f"Executing shell script on device {device_id}...")
-    result = run_command(f"./adb -s {device_id} shell sh /sdcard/Android/data/com.toscl.shellx/shellx.sh")
+    result = run_command(f"{ADB_CMD} -s {device_id} shell sh /sdcard/Android/data/com.toscl.shellx/shellx.sh")
     if result:
         print(f"Shell script execution result: {result}")
         # Try to extract URL from output
@@ -106,7 +134,7 @@ def get_installed_version(device_id):
     """Get the installed APK version on the device"""
     try:
         result = subprocess.run(
-            ['./adb', '-s', device_id, 'shell', 'dumpsys', 'package', 'com.toscl.shellx'],
+            [ADB_CMD, '-s', device_id, 'shell', 'dumpsys', 'package', 'com.toscl.shellx'],
             capture_output=True,
             text=True
         )
@@ -123,7 +151,7 @@ def is_apk_installed(device_id):
     """Check if the APK is installed on the device"""
     try:
         result = subprocess.run(
-            ['./adb', '-s', device_id, 'shell', 'pm', 'list', 'packages', 'com.toscl.shellx'],
+            [ADB_CMD, '-s', device_id, 'shell', 'pm', 'list', 'packages', 'com.toscl.shellx'],
             capture_output=True,
             text=True
         )
