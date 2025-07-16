@@ -297,6 +297,94 @@ jobs:
           retention-days: 1
 
 
+  # -------------------------- APK Download Stage: Download and process APK file --------------------------
+  download-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install required tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget file coreutils
+
+      - name: Create release directory
+        run: |
+          mkdir -p release
+
+      - name: Download APK with version substitution
+        id: download_apk
+        run: |
+          VERSION="${{ env.VERSION }}"
+          # Remove 'v' prefix if present for URL construction
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.apk"
+          
+          echo "Attempting to download APK from: $APK_URL"
+          
+          # Download directly as shellx.apk with retries and error handling
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
+            echo "download_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "Failed to download APK from $APK_URL"
+            echo "download_success=false" >> $GITHUB_OUTPUT
+            exit 0  # Don't fail the job, just skip APK processing
+          fi
+
+      - name: Validate APK file
+        if: steps.download_apk.outputs.download_success == 'true'
+        run: |
+          # Check if file exists and is not empty
+          if [ ! -s "shellx.apk" ]; then
+            echo "APK file is empty or does not exist"
+            exit 1
+          fi
+          
+          # Use file command to check for Android APK signature
+          FILE_TYPE=$(file "shellx.apk")
+          echo "File type: $FILE_TYPE"
+          
+          # Check for APK/ZIP signature (APK files are ZIP archives)
+          if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
+            echo "APK file validation passed"
+          else
+            echo "APK file validation failed - not a valid APK/ZIP file"
+            echo "Expected ZIP/Android archive, got: $FILE_TYPE"
+            exit 1
+          fi
+
+      - name: Generate checksum and move to release
+        if: steps.download_apk.outputs.download_success == 'true'
+        run: |
+          # Generate SHA256 checksum
+          sha256sum "shellx.apk" > "shellx.apk.sha256"
+          echo "Generated SHA256 checksum:"
+          cat "shellx.apk.sha256"
+          
+          # Move files to release directory
+          mv "shellx.apk" "release/"
+          mv "shellx.apk.sha256" "release/"
+          
+          echo "Files moved to release/ directory"
+          ls -la release/
+
+      - name: Handle download failure
+        if: steps.download_apk.outputs.download_success == 'false'
+        run: |
+          echo "APK download failed, but continuing with other artifacts"
+          echo "This may be expected if the APK for version ${{ env.VERSION }} doesn't exist yet"
+          
+          # Create a placeholder file to indicate APK was not available
+          echo "APK for version ${{ env.VERSION }} was not available at download time" > release/apk_not_available.txt
+          echo "Download attempted from: https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${{ env.VERSION }}.apk" >> release/apk_not_available.txt
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: shellx-apk-${{ env.VERSION }}
+          path: release/
+          retention-days: 30
+
+
   # -------------------------- Packaging Stage: Integrate intermediate artifacts and generate final zip packages --------------------------
   package-win-x86:
     needs: build-windows-x86
@@ -435,6 +523,7 @@ jobs:
       - package-linux-x86_64
       - package-macos-x86_64
       - package-macos-aarch64
+      - download-apk
     runs-on: ubuntu-latest
     steps:
       - name: Install wget and coreutils for Ubuntu
@@ -448,7 +537,15 @@ jobs:
       - name: Generate checksums
         run: |
           cd release
+          # Generate checksums for ZIP files
           find . -type f -name "*.zip" -exec sh -c 'for file do sha256sum "$file" > "$file.sha256"; done' sh {} +
+          
+          # Note: APK checksums are generated in the download-apk job, no need to regenerate
+          
+          # Display all files in release directory
+          echo "Files in release directory:"
+          find . -type f | sort
+          
           # Also verify known checksums for platform-tools_r36.0.0-darwin.zip if present
           if [ -f "platform-tools_r36.0.0-darwin.zip" ]; then
             echo "b241878e6ec20650b041bf715ea05f7d5dc73bd24529464bd9cf68946e3132bd  platform-tools_r36.0.0-darwin.zip" > platform-tools_r36.0.0-darwin.zip.sha256.expected
