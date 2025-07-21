@@ -1,0 +1,607 @@
+name: Build Executables
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version name (e.g., v1.0.0, default: Git SHA)'
+        required: false
+
+env:
+  APP_NAME: 'shellx'
+  # Version priority: manual input > Git branch name > first 8 chars of Git SHA
+  VERSION: ${{ github.event.inputs.version || github.ref_name || github.sha }}
+  ADB_BASE_DIR: 'deps/work/install'  # Base directory for final ADB path
+  MAIN_PY_FILE: 'deps/main.py'       # Main program entry point
+
+jobs:
+  # -------------------------- Build Stage: Generate intermediate artifacts by OS + architecture --------------------------
+  build-windows-x86:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python (32-bit)
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.x
+          architecture: 'x86'
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          choco install zip -y  # Install packaging tool
+        shell: pwsh
+
+      - name: Clean previous builds
+        run: |
+          Remove-Item -Recurse -Force dist, build, $env:ADB_BASE_DIR -ErrorAction SilentlyContinue
+        shell: pwsh
+
+      - name: Install wget for Windows
+        run: choco install wget -y
+        shell: pwsh
+
+      - name: Execute ADB script (Windows x86)
+        run: |
+          chmod +x deps/adb_windows.sh
+          deps/adb_windows.sh
+        shell: bash
+
+      - name: Verify ADB binary
+        run: |
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb-windows/adb.exe" ]; then
+            echo "ADB binary not found!" && exit 1
+          fi
+          ls -l ${{ env.ADB_BASE_DIR }}
+        shell: bash
+
+      - name: Build shellx executable (32-bit)
+        run: |
+          pyinstaller --clean --onefile --name "${{ env.APP_NAME }}.exe" ${{ env.MAIN_PY_FILE }}
+        shell: bash
+
+      - name: Copy ADB to dist
+        run: |
+          cp ${{ env.ADB_BASE_DIR }}/adb-windows/* dist/
+          ls -l dist/
+        shell: bash
+
+      - name: Download and validate APK
+        run: |
+          VERSION="${{ env.VERSION }}"
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
+          echo "Attempting to download APK from: $APK_URL"
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
+            if [ ! -s "shellx.apk" ]; then
+              echo "APK file is empty or does not exist"
+              rm -f shellx.apk
+            else
+              FILE_TYPE=$(file "shellx.apk")
+              echo "File type: $FILE_TYPE"
+              if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
+                echo "APK file validation passed"
+                sha256sum "shellx.apk" > "shellx.apk.sha256"
+                mv "shellx.apk" dist/
+                mv "shellx.apk.sha256" dist/
+              else
+                echo "APK file validation failed - not a valid APK/ZIP file"
+                rm -f shellx.apk
+              fi
+            fi
+          else
+            echo "APK download failed, skipping APK inclusion"
+          fi
+        shell: bash
+
+      - name: Upload intermediate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-win-x86
+          path: dist/
+          retention-days: 1
+
+  build-windows-x64:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python (64-bit)
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.x
+          architecture: 'x64'
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          choco install zip -y
+        shell: pwsh
+
+      - name: Clean previous builds
+        run: |
+          Remove-Item -Recurse -Force dist, build, $env:ADB_BASE_DIR -ErrorAction SilentlyContinue
+        shell: pwsh
+
+      - name: Install wget for Windows
+        run: choco install wget -y
+        shell: pwsh
+
+      - name: Execute ADB script (Windows x64)
+        run: |
+          chmod +x deps/adb_windows.sh
+          deps/adb_windows.sh
+        shell: bash
+
+      - name: Verify ADB binary
+        run: |
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb-windows/adb.exe" ]; then
+            echo "ADB binary not found!" && exit 1
+          fi
+        shell: bash
+
+      - name: Build shellx executable (64-bit)
+        run: |
+          pyinstaller --clean --onefile --name "${{ env.APP_NAME }}.exe" ${{ env.MAIN_PY_FILE }}
+        shell: bash
+
+      - name: Copy ADB to dist
+        run: |
+          cp ${{ env.ADB_BASE_DIR }}/adb-windows/* dist/
+        shell: bash
+
+      - name: Download and validate APK
+        run: |
+          VERSION="${{ env.VERSION }}"
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
+          echo "Attempting to download APK from: $APK_URL"
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
+            if [ ! -s "shellx.apk" ]; then
+              echo "APK file is empty or does not exist"
+              rm -f shellx.apk
+            else
+              FILE_TYPE=$(file "shellx.apk")
+              echo "File type: $FILE_TYPE"
+              if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
+                echo "APK file validation passed"
+                sha256sum "shellx.apk" > "shellx.apk.sha256"
+                mv "shellx.apk" dist/
+                mv "shellx.apk.sha256" dist/
+              else
+                echo "APK file validation failed - not a valid APK/ZIP file"
+                rm -f shellx.apk
+              fi
+            fi
+          else
+            echo "APK download failed, skipping APK inclusion"
+          fi
+        shell: bash
+
+      - name: Upload intermediate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-win-x64
+          path: dist/
+          retention-days: 1
+
+  build-linux-x86_64:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check architecture
+        run: |
+          if [ "$(uname -m)" != "x86_64" ]; then
+            echo "Unexpected architecture: $(uname -m)" && exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.x
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          sudo apt update && sudo apt install -y zip unzip wget file
+
+      - name: Clean previous builds
+        run: |
+          rm -rf dist/ build/ ${{ env.ADB_BASE_DIR }}
+
+      - name: Execute ADB script (Linux x86_64)
+        run: |
+          chmod +x deps/adb_linux.sh
+          deps/adb_linux.sh
+
+      - name: Verify ADB binary
+        run: |
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb-linux/adb" ]; then
+            echo "ADB binary not found!" && exit 1
+          fi
+
+      - name: Build shellx executable
+        run: |
+          pyinstaller --clean --onefile --name "${{ env.APP_NAME }}" ${{ env.MAIN_PY_FILE }}
+
+      - name: Copy ADB to dist
+        run: |
+          cp ${{ env.ADB_BASE_DIR }}/adb-linux/* dist/
+
+      - name: Download and validate APK
+        run: |
+          VERSION="${{ env.VERSION }}"
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
+          echo "Attempting to download APK from: $APK_URL"
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
+            if [ ! -s "shellx.apk" ]; then
+              echo "APK file is empty or does not exist"
+              rm -f shellx.apk
+            else
+              FILE_TYPE=$(file "shellx.apk")
+              echo "File type: $FILE_TYPE"
+              if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
+                echo "APK file validation passed"
+                sha256sum "shellx.apk" > "shellx.apk.sha256"
+                mv "shellx.apk" dist/
+                mv "shellx.apk.sha256" dist/
+              else
+                echo "APK file validation failed - not a valid APK/ZIP file"
+                rm -f shellx.apk
+              fi
+            fi
+          else
+            echo "APK download failed, skipping APK inclusion"
+          fi
+
+      - name: Upload intermediate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux-x86_64
+          path: dist/
+          retention-days: 1
+
+  build-macos-x86_64:
+    runs-on: macos-13  # x86_64 architecture
+    steps:
+      - name: Check architecture
+        run: |
+          if [ "$(uname -m)" != "x86_64" ]; then
+            echo "Unexpected architecture: $(uname -m)" && exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.x
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          brew install zip wget file
+
+      - name: Clean previous builds
+        run: |
+          rm -rf dist/ build/ ${{ env.ADB_BASE_DIR }}
+
+      - name: Execute ADB script (macOS x86_64)
+        run: |
+          chmod +x deps/adb_macos.sh
+          deps/adb_macos.sh
+
+      - name: Verify ADB binary
+        run: |
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb-macos/adb" ]; then
+            echo "ADB binary not found!" && exit 1
+          fi
+
+      - name: Build shellx executable
+        run: |
+          pyinstaller --clean --onefile --name "${{ env.APP_NAME }}" ${{ env.MAIN_PY_FILE }}
+
+      - name: Copy ADB to dist
+        run: |
+          cp ${{ env.ADB_BASE_DIR }}/adb-macos/* dist/
+
+      - name: Download and validate APK
+        run: |
+          VERSION="${{ env.VERSION }}"
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
+          echo "Attempting to download APK from: $APK_URL"
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
+            if [ ! -s "shellx.apk" ]; then
+              echo "APK file is empty or does not exist"
+              rm -f shellx.apk
+            else
+              FILE_TYPE=$(file "shellx.apk")
+              echo "File type: $FILE_TYPE"
+              if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
+                echo "APK file validation passed"
+                shasum -a 256 "shellx.apk" > "shellx.apk.sha256"
+                mv "shellx.apk" dist/
+                mv "shellx.apk.sha256" dist/
+              else
+                echo "APK file validation failed - not a valid APK/ZIP file"
+                rm -f shellx.apk
+              fi
+            fi
+          else
+            echo "APK download failed, skipping APK inclusion"
+          fi
+
+      - name: Upload intermediate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-macos-x86_64
+          path: dist/
+          retention-days: 1
+
+  build-macos-aarch64:
+    runs-on: macos-latest  # Apple Silicon (aarch64)
+    steps:
+      - name: Check architecture
+        run: |
+          if [ "$(uname -m)" != "arm64" ]; then
+            echo "Unexpected architecture: $(uname -m)" && exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.x
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          brew install zip wget file
+
+      - name: Clean previous builds
+        run: |
+          rm -rf dist/ build/ ${{ env.ADB_BASE_DIR }}
+
+      - name: Execute ADB script (macOS aarch64)
+        run: |
+          chmod +x deps/adb_macos.sh
+          deps/adb_macos.sh
+
+      - name: Verify ADB binary
+        run: |
+          if [ ! -f "${{ env.ADB_BASE_DIR }}/adb-macos/adb" ]; then
+            echo "ADB binary not found!" && exit 1
+          fi
+
+      - name: Build shellx executable
+        run: |
+          pyinstaller --clean --onefile --name "${{ env.APP_NAME }}" ${{ env.MAIN_PY_FILE }}
+
+      - name: Copy ADB to dist
+        run: |
+          cp ${{ env.ADB_BASE_DIR }}/adb-macos/* dist/
+
+      - name: Download and validate APK
+        run: |
+          VERSION="${{ env.VERSION }}"
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+          APK_URL="https://shellx-1251503967.cos.ap-guangzhou.myqcloud.com/shellx-${CLEAN_VERSION}.zip"
+          echo "Attempting to download APK from: $APK_URL"
+          if wget --timeout=30 --tries=3 --retry-connrefused -O "shellx.apk" "$APK_URL"; then
+            echo "APK downloaded successfully as shellx.apk"
+            if [ ! -s "shellx.apk" ]; then
+              echo "APK file is empty or does not exist"
+              rm -f shellx.apk
+            else
+              FILE_TYPE=$(file "shellx.apk")
+              echo "File type: $FILE_TYPE"
+              if echo "$FILE_TYPE" | grep -q -i "zip\|archive\|android"; then
+                echo "APK file validation passed"
+                shasum -a 256 "shellx.apk" > "shellx.apk.sha256"
+                mv "shellx.apk" dist/
+                mv "shellx.apk.sha256" dist/
+              else
+                echo "APK file validation failed - not a valid APK/ZIP file"
+                rm -f shellx.apk
+              fi
+            fi
+          else
+            echo "APK download failed, skipping APK inclusion"
+          fi
+
+      - name: Upload intermediate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-macos-aarch64
+          path: dist/
+          retention-days: 1
+
+  # -------------------------- Packaging Stage: Integrate intermediate artifacts and generate final zip packages --------------------------
+  package-win-x86:
+    needs: build-windows-x86
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-win-x86
+          path: dist/
+
+      - name: Package as zip
+        run: |
+          VERSION=${{ env.VERSION }}
+          ZIP_NAME="${{ env.APP_NAME }}-win-x86-${VERSION}.zip"
+          cd dist && zip -r ../${ZIP_NAME} ./*
+
+      - name: Upload final package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-win-x86-${{ env.VERSION }}
+          path: ./*.zip
+          retention-days: 7
+
+  package-win-x64:
+    needs: build-windows-x64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-win-x64
+          path: dist/
+
+      - name: Package as zip
+        run: |
+          VERSION=${{ env.VERSION }}
+          ZIP_NAME="${{ env.APP_NAME }}-win-x64-${VERSION}.zip"
+          cd dist && zip -r ../${ZIP_NAME} ./*
+
+      - name: Upload final package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-win-x64-${{ env.VERSION }}
+          path: ./*.zip
+          retention-days: 7
+
+  package-linux-x86_64:
+    needs: build-linux-x86_64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux-x86_64
+          path: dist/
+
+      - name: Fix permissions
+        run: chmod +x dist/*
+
+      - name: Package as zip
+        run: |
+          VERSION=${{ env.VERSION }}
+          ZIP_NAME="${{ env.APP_NAME }}-linux-x86_64-${VERSION}.zip"
+          cd dist && zip -r ../${ZIP_NAME} ./*
+
+      - name: Upload final package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-linux-x86_64-${{ env.VERSION }}
+          path: ./*.zip
+          retention-days: 7
+
+  package-macos-x86_64:
+    needs: build-macos-x86_64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-macos-x86_64
+          path: dist/
+
+      - name: Fix permissions
+        run: chmod +x dist/*
+
+      - name: Package as zip
+        run: |
+          VERSION=${{ env.VERSION }}
+          ZIP_NAME="${{ env.APP_NAME }}-macos-x86_64-${VERSION}.zip"
+          cd dist && zip -r ../${ZIP_NAME} ./*
+
+      - name: Upload final package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-macos-x86_64-${{ env.VERSION }}
+          path: ./*.zip
+          retention-days: 7
+
+  package-macos-aarch64:
+    needs: build-macos-aarch64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-macos-aarch64
+          path: dist/
+
+      - name: Fix permissions
+        run: chmod +x dist/*
+
+      - name: Package as zip
+        run: |
+          VERSION=${{ env.VERSION }}
+          ZIP_NAME="${{ env.APP_NAME }}-macos-aarch64-${VERSION}.zip"
+          cd dist && zip -r ../${ZIP_NAME} ./*
+
+      - name: Upload final package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-macos-aarch64-${{ env.VERSION }}
+          path: ./*.zip
+          retention-days: 7
+
+  # -------------------------- Release Summary: Collect all final artifacts --------------------------
+  release:
+    needs:
+      - package-win-x86
+      - package-win-x64
+      - package-linux-x86_64
+      - package-macos-x86_64
+      - package-macos-aarch64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install wget and coreutils for Ubuntu
+        run: sudo apt-get update && sudo apt-get install -y wget coreutils
+
+      - name: Download all packages
+        uses: actions/download-artifact@v4
+        with:
+          path: release/
+
+      - name: Generate checksums
+        run: |
+          cd release
+          # Generate checksums for ZIP files
+          find . -type f -name "*.zip" -exec sh -c 'for file do sha256sum "$file" > "$file.sha256"; done' sh {} +
+          
+          # Display all files in release directory
+          echo "Files in release directory:"
+          find . -type f | sort
+          
+          # Also verify known checksums for platform-tools_r36.0.0-darwin.zip if present
+          if [ -f "platform-tools_r36.0.0-darwin.zip" ]; then
+            echo "b241878e6ec20650b041bf715ea05f7d5dc73bd24529464bd9cf68946e3132bd  platform-tools_r36.0.0-darwin.zip" > platform-tools_r36.0.0-darwin.zip.sha256.expected
+            echo "platform-tools_r36.0.0-darwin.zip: verifying checksum..."
+            sha256sum -c platform-tools_r36.0.0-darwin.zip.sha256.expected || (echo "Checksum verification failed for platform-tools_r36.0.0-darwin.zip" && exit 1)
+          fi
+          # Also verify known checksums for platform-tools_r36.0.0-win.zip if present
+          if [ -f "platform-tools_r36.0.0-win.zip" ]; then
+            echo "24bd8bebbbb58b9870db202b5c6775c4a49992632021c60750d9d8ec8179d5f0  platform-tools_r36.0.0-win.zip" > platform-tools_r36.0.0-win.zip.sha256.expected
+            echo "platform-tools_r36.0.0-win.zip: verifying checksum..."
+            sha256sum -c platform-tools_r36.0.0-win.zip.sha256.expected || (echo "Checksum verification failed for platform-tools_r36.0.0-win.zip" && exit 1)
+          fi
+
+      - name: Upload all releases
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-all-releases-${{ env.VERSION }}
+          path: release/
+          retention-days: 30
