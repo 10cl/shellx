@@ -180,7 +180,7 @@ def start_main_activity(device_id):
 def execute_shell_script(device_id):
     """Execute shell script and return the URL from the output"""
     print(f"Executing shell script on device {device_id}...")
-    result = run_command(f"{ADB_CMD} -s {device_id} shell sh /sdcard/Android/data/com.toscl.shellx/shellx.sh")
+    result = run_command(f"{ADB_CMD} -s {device_id} shell sh /sdcard/Android/data/com.toscl.shellx/shellx.sh --dex=/data/local/tmp/shellx_dex.dex")
     if result:
         print(f"Shell script execution result: {result}")
         # Try to extract URL from output
