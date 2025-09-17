@@ -6,6 +6,7 @@ import sys
 import re
 import webbrowser
 import hashlib
+import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -250,7 +251,7 @@ def get_apk_version(apk_path):
 def process_device(device_id, apk_path):
     """Process installation/update logic for a single device"""
     print(f"Processing device: {device_id}")
-    
+
     # Get APK version
     # apk_version = get_apk_version(apk_path)
     # if apk_version is None:
@@ -279,7 +280,10 @@ def process_device(device_id, apk_path):
     return install_apk(device_id, apk_path)
 
 def main():
-    # Get APK path
+    parser = argparse.ArgumentParser(description='ShellX APK deployment script')
+    parser.add_argument('--just-start', action='store_true', 
+                       help='Only start the app if already installed, skip installation')
+    args = parser.parse_args()
     apk_path = Path("shellx.apk")
     if not apk_path.exists():
         print(f"Error: APK not found at {apk_path}")
@@ -297,7 +301,7 @@ def main():
     while True:
         try:
             current_devices = set(get_connected_devices())
-            
+
             # Check for newly connected devices and devices that need retry
             devices_to_process = (current_devices - last_devices) | {
                 device_id for device_id, retry_time in failed_devices.items()
@@ -306,27 +310,30 @@ def main():
 
             for device_id in devices_to_process:
                 print(f"Processing device: {device_id}")
-
-                # Install new version
-                if process_device(device_id, apk_path):
-                    # Start MainActivity
-                    if start_main_activity(device_id):
-                        if setup_port_forwarding(device_id):
-                            url = execute_shell_script(device_id)
-                            if url:
-                                open_browser(url)
-                        # Remove device from failed list if present
-                        failed_devices.pop(device_id, None)
-                    else:
-                        # If starting MainActivity fails, add to failed list
-                        failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
-                        print(f"Device {device_id} failed to start MainActivity. Will retry in 10 seconds.")
+                if args.just_start and is_apk_installed(device_id):
+                    print(f"APK already installed on device {device_id}, starting directly")
+                    execute_shell_script(device_id)
                 else:
-                    # Record or update failure time
-                    failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
-                    print(f"Device {device_id} installation failed. Will retry in 10 seconds.")
+                    # Install new version
+                    if process_device(device_id, apk_path):
+                        # Start MainActivity
+                        if start_main_activity(device_id):
+                            if setup_port_forwarding(device_id):
+                                url = execute_shell_script(device_id)
+                                if url:
+                                    open_browser(url)
+                            # Remove device from failed list if present
+                            failed_devices.pop(device_id, None)
+                        else:
+                            # If starting MainActivity fails, add to failed list
+                            failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
+                            print(f"Device {device_id} failed to start MainActivity. Will retry in 10 seconds.")
+                    else:
+                        # Record or update failure time
+                        failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
+                        print(f"Device {device_id} installation failed. Will retry in 10 seconds.")
 
-            
+
             last_devices = current_devices
             time.sleep(1)  # Check every second
 
