@@ -274,25 +274,33 @@ jobs:
           retention-days: 1
 
   build-macos-x86_64:
-    runs-on: macos-15  # x86_64 architecture
+    runs-on: macos-15  # ARM64 runner, building x86_64 binaries via Rosetta 2
     steps:
-      - name: Check architecture
+      - name: Check architecture (ARM64 runner expected)
         run: |
-          if [ "$(uname -m)" != "x86_64" ]; then
+          if [ "$(uname -m)" != "arm64" ]; then
             echo "Unexpected architecture: $(uname -m)" && exit 1
           fi
 
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.10.x
-
-      - name: Install dependencies
+      - name: Install x86_64 Python via Rosetta 2
         run: |
-          pip install pyinstaller
+          # Download and install x86_64 Python using Rosetta 2
+          arch -x86_64 /bin/bash -c "
+            echo 'Installing x86_64 Python via Rosetta 2...'
+            curl -fsSL https://www.python.org/ftp/python/3.10.11/python-3.10.11-macosx10.9.pkg -o python.pkg
+            sudo installer -pkg python.pkg -target /
+            export PATH=/usr/local/bin:/Library/Frameworks/Python.framework/Versions/3.10/bin:$PATH
+            python3 --version
+            python3 -m pip install --upgrade pip
+            python3 -m pip install pyinstaller
+          "
+
+      - name: Install system dependencies
+        run: |
+          # Install dependencies that work on both architectures
           brew install zip wget file
 
       - name: Clean previous builds
@@ -302,7 +310,8 @@ jobs:
       - name: Execute ADB script (macOS x86_64)
         run: |
           chmod +x deps/adb_macos.sh
-          deps/adb_macos.sh
+          # Run ADB setup under Rosetta 2 for x86_64 compatibility
+          arch -x86_64 bash deps/adb_macos.sh
 
       - name: Verify ADB binary
         run: |
@@ -310,9 +319,14 @@ jobs:
             echo "ADB binary not found!" && exit 1
           fi
 
-      - name: Build shellx executable
+      - name: Build shellx executable (x86_64)
         run: |
-          pyinstaller --clean --onefile --name "${{ env.APP_NAME }}" ${{ env.MAIN_PY_FILE }}
+          # Force x86_64 architecture using Rosetta 2
+          arch -x86_64 /bin/bash -c "
+            export PATH=/usr/local/bin:/Library/Frameworks/Python.framework/Versions/3.10/bin:$PATH
+            cd $(pwd)
+            pyinstaller --clean --onefile --name '${{ env.APP_NAME }}.exe' ${{ env.MAIN_PY_FILE }}
+          "
 
       - name: Copy ADB to dist
         run: |
