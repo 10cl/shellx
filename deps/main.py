@@ -10,6 +10,7 @@ import signal
 import logging
 import argparse
 import atexit
+import requests
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -290,8 +291,8 @@ def start_main_activity(device_id):
     """Start MainActivity"""
     print(f"Starting MainActivity on device {device_id}...")
     result = run_command(f"{ADB_CMD} -s {device_id} shell am start -n com.toscl.shellx/.MainActivity")
-    print("Waiting 3 seconds for MainActivity to initialize...")
-    time.sleep(3)
+    print("Waiting 6 seconds for MainActivity to initialize...")
+    time.sleep(6)
     return True
 
 def execute_shell_script(device_id):
@@ -306,6 +307,40 @@ def execute_shell_script(device_id):
     else:
         print(f"Failed to execute shell script on device {device_id}")
     return None
+
+def check_health_status():
+    """Check health status by accessing http://127.0.0.1:9091/api/health for 5 seconds"""
+    print("Checking health status...")
+    import time
+    start_time = time.time()
+    while time.time() - start_time < 5:
+        try:
+            response = requests.get("http://127.0.0.1:9091/api/health", timeout=1)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("status") == "healthy":
+                    print("Health check passed")
+                    return True
+                else:
+                    print(f"Health check failed: status = {data.get('status')}")
+            else:
+                print(f"Health check failed: HTTP {response.status_code}")
+        except Exception as e:
+            print(f"Health check failed: {e}")
+        time.sleep(0.5)  # Wait 0.5 seconds before next check
+    print("Health check timed out after 5 seconds")
+    return False
+
+def stop_shell_script(device_id):
+    """Stop shell script on device"""
+    print(f"Stopping shell script on device {device_id}...")
+    result = run_command(f"{ADB_CMD} -s {device_id} shell sh /sdcard/Android/data/com.toscl.shellx/shellx.sh --stop --dex=/data/local/tmp/shellx_dex.dex")
+    if result:
+        print(f"Shell script stop result: {result}")
+        return True
+    else:
+        print(f"Failed to stop shell script on device {device_id}")
+        return False
 
 def open_browser(url, enable_browser=True):
     time.sleep(3)
@@ -400,8 +435,20 @@ def run_daemon(enable_browser=True):
                         if setup_port_forwarding(device_id):
                             url = execute_shell_script(device_id)
                             if url:
-                                open_browser(url, enable_browser=enable_browser)
-                        failed_devices.pop(device_id, None)
+                                if check_health_status():
+                                    open_browser(url, enable_browser=enable_browser)
+                                    failed_devices.pop(device_id, None)
+                                else:
+                                    logger.warning(f"Health check failed for device {device_id}. Uninstalling and retrying...")
+                                    uninstall_apk(device_id)
+                                    failed_devices[device_id] = datetime.now() + timedelta(seconds=5)  # Retry sooner
+                                    continue  # Skip to next device
+                            else:
+                                failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
+                                logger.warning(f"Shell script execution failed for device {device_id}")
+                        else:
+                            failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
+                            logger.warning(f"Port forwarding setup failed for device {device_id}")
                     else:
                         failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
                         logger.warning(f"Device {device_id} failed to start MainActivity. Will retry in 10 seconds.")
@@ -419,14 +466,54 @@ def run_daemon(enable_browser=True):
     logger.info("Daemon exiting")
     cleanup_pid()
 
+def stop_shellx_process():
+    """Stop ShellX process"""
+    print("Stopping ShellX process...")
+    try:
+        # First, try to stop shellx processes on connected devices
+        devices = get_connected_devices()
+        device_stop_success = True
+        for device_id in devices:
+            if not stop_shell_script(device_id):
+                device_stop_success = False
+        return True
+        # Then stop local shellx processes
+        # local_stop_success = False
+        # if is_windows():
+        #     # On Windows, kill shellx.exe process
+        #     result = subprocess.run(['taskkill', '/F', '/IM', 'shellx.exe'],
+        #                            capture_output=True, text=True)
+        #     local_stop_success = result.returncode == 0
+        # else:
+        #     # On Unix-like systems, kill shellx process
+        #     result = subprocess.run(['pkill', '-f', 'shellx'],
+        #                            capture_output=True, text=True)
+        #     local_stop_success = result.returncode == 0
+
+        # if device_stop_success or local_stop_success:
+        #     print("Successfully stopped ShellX process(es)")
+        #     return True
+        # else:
+        #     print("ShellX process may not be running")
+        #     return False
+    except Exception as e:
+        print(f"Error stopping ShellX process: {e}")
+        return False
+
 def main():
     parser = argparse.ArgumentParser(description='ShellX USB Device Auto-Deployment Daemon')
     parser.add_argument('-d', '--daemon', action='store_true', help='Run as background daemon process')
     parser.add_argument('-k', '--kill', action='store_true', help='Stop running daemon process')
     parser.add_argument('-s', '--status', action='store_true', help='Show daemon process status')
     parser.add_argument('--no-browser', action='store_true', help='Do not open browser when URL detected')
+    parser.add_argument('--stop', action='store_true', help='Stop ShellX process')
 
     args = parser.parse_args()
+
+    # Stop ShellX process
+    if args.stop:
+        success = stop_shellx_process()
+        sys.exit(0 if success else 1)
 
     # Show status
     if args.status:
