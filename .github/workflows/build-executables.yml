@@ -274,7 +274,7 @@ jobs:
           retention-days: 1
 
   build-macos-x86_64:
-    runs-on: macos-13  # x86_64 architecture
+    runs-on: macos-15  # x86_64 architecture
     steps:
       - name: Check architecture
         run: |
