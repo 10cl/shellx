@@ -232,30 +232,6 @@ jobs:
           # Fix permissions for Unix executables
           chmod +x linux-x86_64/shellx macos-x86_64/shellx macos-aarch64/shellx
 
-          # Create README
-          cat > README.txt << 'EOF'
-ShellX - USB Device Auto-Deployment Daemon
-==========================================
-
-This package contains executables for all platforms:
-
-Platform Directory Structure:
-  windows-x86/      - Windows 32-bit (shellx.exe)
-  windows-x64/      - Windows 64-bit (shellx.exe)
-  linux-x86_64/     - Linux x86_64 (shellx)
-  macos-x86_64/     - macOS Intel (shellx)
-  macos-aarch64/    - macOS Apple Silicon (shellx)
-
-Usage:
-  - Windows: Run the appropriate .exe file directly
-  - Linux/macOS: Make the file executable and run:
-      chmod +x shellx
-      ./shellx
-
-For more information, visit: https://shellx.ai
-Version: ${{ env.VERSION }}
-EOF
-
           # Display final directory structure
           echo "Final package structure:"
           ls -la
