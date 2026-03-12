@@ -593,20 +593,20 @@ def check_device_version_update(device_id, daemon_mode=False):
 
     try:
         import sys
-        if sys.stdin.isatty():
-            response = input().strip().lower()
-            if response in ['', 'y', 'yes']:
-                log_info(f"  User confirmed update")
-                return True
-            else:
-                log_warning(f"  User declined update, skipping device {device_id}")
-                return False
+        # Skip TTY check for Windows executables (PyInstaller compatibility)
+        response = input().strip().lower()
+        if response in ['', 'y', 'yes']:
+            log_info(f"  User confirmed update")
+            return True
         else:
-            # No interactive terminal, skip update
-            log_warning(f"  No interactive terminal, skipping device {device_id}")
+            log_warning(f"  User declined update, skipping device {device_id}")
             return False
     except (EOFError, KeyboardInterrupt):
         log_warning(f"  Input interrupted, skipping device {device_id}")
+        return False
+    except Exception:
+        # No interactive terminal available, skip update
+        log_warning(f"  No interactive terminal, skipping device {device_id}")
         return False
 
 # ==============================================================================
@@ -668,25 +668,26 @@ def show_service_menu(device_id, daemon_mode=False, apk_installed=True):
 
     try:
         import sys
-        if sys.stdin.isatty():
-            while True:
-                try:
-                    choice = input().strip()
-                    # Validate input based on APK status
-                    valid_choices = ['0', '1', '2', '3', '4'] if apk_installed else ['0', '1', '2']
-                    if choice in valid_choices:
-                        return int(choice)
-                    range_hint = "0-4" if apk_installed else "0-2"
-                    print(f"  Invalid choice. Please enter {range_hint}: ", end='', flush=True)
-                except ValueError:
-                    print("  Invalid input. Please enter a number: ", end='', flush=True)
-        else:
-            # No interactive terminal, skip device
-            log_warning("  No interactive terminal, skipping device")
-            print()
-            return 0
+        # Skip TTY check for Windows executables (PyInstaller compatibility)
+        # Try to read input directly, handle all exceptions
+        while True:
+            try:
+                choice = input().strip()
+                # Validate input based on APK status
+                valid_choices = ['0', '1', '2', '3', '4'] if apk_installed else ['0', '1', '2']
+                if choice in valid_choices:
+                    return int(choice)
+                range_hint = "0-4" if apk_installed else "0-2"
+                print(f"  Invalid choice. Please enter {range_hint}: ", end='', flush=True)
+            except ValueError:
+                print("  Invalid input. Please enter a number: ", end='', flush=True)
     except (EOFError, KeyboardInterrupt):
         log_warning("  Input interrupted, skipping device")
+        print()
+        return 0
+    except Exception as e:
+        # Any other error means no interactive terminal available
+        log_warning("  No interactive terminal available, skipping device")
         print()
         return 0
 
