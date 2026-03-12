@@ -1286,6 +1286,15 @@ def stop_shellx_on_devices():
     print(f"Stopped on {len(devices)} device(s)")
 
 def main():
+    # Fix Windows encoding issue for emoji and special characters
+    if sys.platform == 'win32':
+        import io
+        try:
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+        except Exception:
+            pass  # Fallback to default encoding if wrapper fails
+
     parser = argparse.ArgumentParser(
         description='ShellX USB Device Auto-Deployment Daemon',
         formatter_class=argparse.RawDescriptionHelpFormatter,
