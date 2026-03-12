@@ -17,7 +17,7 @@ env:
   MAIN_PY_FILE: 'deps/main.py'       # Main program entry point
 
 jobs:
-  # -------------------------- Build Stage: Generate intermediate artifacts by OS + architecture --------------------------
+  # -------------------------- Build Stage: Generate executables for all platforms --------------------------
   build-windows-x86:
     runs-on: windows-latest
     steps:
@@ -31,14 +31,11 @@ jobs:
           architecture: 'x86'
 
       - name: Install dependencies
-        run: |
-          pip install pyinstaller
-          choco install zip -y
+        run: pip install pyinstaller
         shell: pwsh
 
       - name: Clean previous builds
-        run: |
-          Remove-Item -Recurse -Force dist, build -ErrorAction SilentlyContinue
+        run: Remove-Item -Recurse -Force dist, build -ErrorAction SilentlyContinue
         shell: pwsh
 
       - name: Build shellx executable (32-bit)
@@ -46,11 +43,11 @@ jobs:
           pyinstaller --clean --onefile --name "${{ env.APP_NAME }}.exe" ${{ env.MAIN_PY_FILE }}
         shell: bash
 
-      - name: Upload intermediate artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-win-x86
-          path: dist/
+          path: dist/shellx.exe
           retention-days: 1
 
   build-windows-x64:
@@ -66,14 +63,11 @@ jobs:
           architecture: 'x64'
 
       - name: Install dependencies
-        run: |
-          pip install pyinstaller
-          choco install zip -y
+        run: pip install pyinstaller
         shell: pwsh
 
       - name: Clean previous builds
-        run: |
-          Remove-Item -Recurse -Force dist, build -ErrorAction SilentlyContinue
+        run: Remove-Item -Recurse -Force dist, build -ErrorAction SilentlyContinue
         shell: pwsh
 
       - name: Build shellx executable (64-bit)
@@ -81,11 +75,11 @@ jobs:
           pyinstaller --clean --onefile --name "${{ env.APP_NAME }}.exe" ${{ env.MAIN_PY_FILE }}
         shell: bash
 
-      - name: Upload intermediate artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-win-x64
-          path: dist/
+          path: dist/shellx.exe
           retention-days: 1
 
   build-linux-x86_64:
@@ -106,23 +100,20 @@ jobs:
           python-version: 3.10.x
 
       - name: Install dependencies
-        run: |
-          pip install pyinstaller
-          sudo apt update && sudo apt install -y zip
+        run: pip install pyinstaller
 
       - name: Clean previous builds
-        run: |
-          rm -rf dist/ build/
+        run: rm -rf dist/ build/
 
       - name: Build shellx executable
         run: |
           pyinstaller --clean --onefile --name "${{ env.APP_NAME }}" ${{ env.MAIN_PY_FILE }}
 
-      - name: Upload intermediate artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-linux-x86_64
-          path: dist/
+          path: dist/shellx
           retention-days: 1
 
   build-macos-x86_64:
@@ -150,14 +141,8 @@ jobs:
             python3 -m pip install pyinstaller
           "
 
-      - name: Install system dependencies
-        run: |
-          # Install dependencies that work on both architectures
-          brew install zip
-
       - name: Clean previous builds
-        run: |
-          rm -rf dist/ build/
+        run: rm -rf dist/ build/
 
       - name: Build shellx executable (x86_64)
         run: |
@@ -168,11 +153,11 @@ jobs:
             pyinstaller --clean --onefile --name '${{ env.APP_NAME }}' ${{ env.MAIN_PY_FILE }}
           "
 
-      - name: Upload intermediate artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-macos-x86_64
-          path: dist/
+          path: dist/shellx
           retention-days: 1
 
   build-macos-aarch64:
@@ -193,178 +178,108 @@ jobs:
           python-version: 3.10.x
 
       - name: Install dependencies
-        run: |
-          pip install pyinstaller
-          brew install zip
+        run: pip install pyinstaller
 
       - name: Clean previous builds
-        run: |
-          rm -rf dist/ build/
+        run: rm -rf dist/ build/
 
       - name: Build shellx executable
         run: |
           pyinstaller --clean --onefile --name "${{ env.APP_NAME }}" ${{ env.MAIN_PY_FILE }}
 
-      - name: Upload intermediate artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-macos-aarch64
-          path: dist/
+          path: dist/shellx
           retention-days: 1
 
-  # -------------------------- Packaging Stage: Integrate intermediate artifacts and generate final zip packages --------------------------
-  package-win-x86:
-    needs: build-windows-x86
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-win-x86
-          path: dist/
-
-      - name: Package as zip
-        run: |
-          VERSION=${{ env.VERSION }}
-          ZIP_NAME="${{ env.APP_NAME }}-win-x86-${VERSION}.zip"
-          cd dist && zip -r ../${ZIP_NAME} ./*
-
-      - name: Upload final package
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_NAME }}-win-x86-${{ env.VERSION }}
-          path: ./*.zip
-          retention-days: 7
-
-  package-win-x64:
-    needs: build-windows-x64
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-win-x64
-          path: dist/
-
-      - name: Package as zip
-        run: |
-          VERSION=${{ env.VERSION }}
-          ZIP_NAME="${{ env.APP_NAME }}-win-x64-${VERSION}.zip"
-          cd dist && zip -r ../${ZIP_NAME} ./*
-
-      - name: Upload final package
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_NAME }}-win-x64-${{ env.VERSION }}
-          path: ./*.zip
-          retention-days: 7
-
-  package-linux-x86_64:
-    needs: build-linux-x86_64
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-linux-x86_64
-          path: dist/
-
-      - name: Fix permissions
-        run: chmod +x dist/*
-
-      - name: Package as zip
-        run: |
-          VERSION=${{ env.VERSION }}
-          ZIP_NAME="${{ env.APP_NAME }}-linux-x86_64-${VERSION}.zip"
-          cd dist && zip -r ../${ZIP_NAME} ./*
-
-      - name: Upload final package
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_NAME }}-linux-x86_64-${{ env.VERSION }}
-          path: ./*.zip
-          retention-days: 7
-
-  package-macos-x86_64:
-    needs: build-macos-x86_64
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-macos-x86_64
-          path: dist/
-
-      - name: Fix permissions
-        run: chmod +x dist/*
-
-      - name: Package as zip
-        run: |
-          VERSION=${{ env.VERSION }}
-          ZIP_NAME="${{ env.APP_NAME }}-macos-x86_64-${VERSION}.zip"
-          cd dist && zip -r ../${ZIP_NAME} ./*
-
-      - name: Upload final package
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_NAME }}-macos-x86_64-${{ env.VERSION }}
-          path: ./*.zip
-          retention-days: 7
-
-  package-macos-aarch64:
-    needs: build-macos-aarch64
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-macos-aarch64
-          path: dist/
-
-      - name: Fix permissions
-        run: chmod +x dist/*
-
-      - name: Package as zip
-        run: |
-          VERSION=${{ env.VERSION }}
-          ZIP_NAME="${{ env.APP_NAME }}-macos-aarch64-${VERSION}.zip"
-          cd dist && zip -r ../${ZIP_NAME} ./*
-
-      - name: Upload final package
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_NAME }}-macos-aarch64-${{ env.VERSION }}
-          path: ./*.zip
-          retention-days: 7
-
-  # -------------------------- Release Summary: Collect all final artifacts --------------------------
-  release:
+  # -------------------------- Packaging Stage: Create single package with all platforms --------------------------
+  package-all:
     needs:
-      - package-win-x86
-      - package-win-x64
-      - package-linux-x86_64
-      - package-macos-x86_64
-      - package-macos-aarch64
+      - build-windows-x86
+      - build-windows-x64
+      - build-linux-x86_64
+      - build-macos-x86_64
+      - build-macos-aarch64
     runs-on: ubuntu-latest
     steps:
-      - name: Download all packages
+      - name: Create package directory
+        run: |
+          mkdir -p shellx-all
+          cd shellx-all
+          mkdir -p windows-x86 windows-x64 linux-x86_64 macos-x86_64 macos-aarch64
+
+      - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          path: release/
+          path: shellx-all/
+
+      - name: Organize files by platform
+        run: |
+          cd shellx-all
+
+          # Move executables to platform-specific directories
+          mv build-win-x86/shellx.exe windows-x86/
+          mv build-win-x64/shellx.exe windows-x64/
+          mv build-linux-x86_64/shellx linux-x86_64/
+          mv build-macos-x86_64/shellx macos-x86_64/
+          mv build-macos-aarch64/shellx macos-aarch64/
+
+          # Remove empty artifact directories
+          rm -rf build-*
+
+          # Fix permissions for Unix executables
+          chmod +x linux-x86_64/shellx macos-x86_64/shellx macos-aarch64/shellx
+
+          # Create README
+          cat > README.txt << 'EOF'
+ShellX - USB Device Auto-Deployment Daemon
+==========================================
+
+This package contains executables for all platforms:
+
+Platform Directory Structure:
+  windows-x86/      - Windows 32-bit (shellx.exe)
+  windows-x64/      - Windows 64-bit (shellx.exe)
+  linux-x86_64/     - Linux x86_64 (shellx)
+  macos-x86_64/     - macOS Intel (shellx)
+  macos-aarch64/    - macOS Apple Silicon (shellx)
+
+Usage:
+  - Windows: Run the appropriate .exe file directly
+  - Linux/macOS: Make the file executable and run:
+      chmod +x shellx
+      ./shellx
+
+For more information, visit: https://shellx.ai
+Version: ${{ env.VERSION }}
+EOF
+
+          # Display final directory structure
+          echo "Final package structure:"
+          ls -la
+
+      - name: Create unified package
+        run: |
+          VERSION=${{ env.VERSION }}
+          ZIP_NAME="${{ env.APP_NAME }}-all-${VERSION}.zip"
+          zip -r ${ZIP_NAME} shellx-all/*
+          echo "Created package: ${ZIP_NAME}"
+          ls -lh ${ZIP_NAME}
 
       - name: Generate checksums
         run: |
-          cd release
-          # Generate checksums for ZIP files
-          find . -type f -name "*.zip" -exec sh -c 'for file do sha256sum "$file" > "$file.sha256"; done' sh {} +
+          ZIP_NAME="${{ env.APP_NAME }}-all-${{ env.VERSION }}.zip"
+          sha256sum ${ZIP_NAME} > ${ZIP_NAME}.sha256
+          echo "Checksum:"
+          cat ${ZIP_NAME}.sha256
 
-          # Display all files in release directory
-          echo "Files in release directory:"
-          find . -type f | sort
-
-      - name: Upload all releases
+      - name: Upload final package
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.APP_NAME }}-all-releases-${{ env.VERSION }}
-          path: release/
+          name: ${{ env.APP_NAME }}-all-${{ env.VERSION }}
+          path: |
+            *.zip
+            *.sha256
           retention-days: 30
