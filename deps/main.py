@@ -226,9 +226,9 @@ def install_adb():
         # Check if it's our installed version or system ADB
         local_adb = BIN_DIR / ADB_EXE
         if str(adb_path) == str(local_adb):
-            log_info(f"✓ ADB already exists at {local_adb}, skipping download")
+            log_info(f"[OK] ADB already exists at {local_adb}, skipping download")
         else:
-            log_info(f"✓ System ADB found at: {adb_path}")
+            log_info(f"[OK] System ADB found at: {adb_path}")
             log_info(f"  Using system ADB, skipping download")
             log_info(f"  Note: To use bundled ADB, run: rm {local_adb} and restart")
         return True
@@ -252,13 +252,13 @@ def install_adb():
 
     # Try Huawei Cloud mirror first (if version available)
     if is_huawei_version_available():
-        log_info("📡 Huawei Cloud mirror available for this version")
-        log_info("⬇️  Attempting download from mirrors.huaweicloud.com...")
+        log_info("[CLOUD] Huawei Cloud mirror available for this version")
+        log_info("[DOWN]  Attempting download from mirrors.huaweicloud.com...")
         huawei_url = f"https://mirrors.huaweicloud.com/android/repository/{ADB_ZIP_NAME}"
 
         if download_file(huawei_url, adb_zip, "ADB from Huawei Cloud"):
             if verify_zip_file(adb_zip):
-                log_success("✓ Downloaded from Huawei Cloud mirror")
+                log_success("[OK] Downloaded from Huawei Cloud mirror")
                 download_success = True
             else:
                 log_warning("Downloaded file is corrupted, will retry from Google")
@@ -267,16 +267,16 @@ def install_adb():
 
     # Fallback to Google official source
     if not download_success:
-        log_info("⬇️  Attempting download from dl.google.com...")
+        log_info("[DOWN]  Attempting download from dl.google.com...")
         google_url = f"https://dl.google.com/android/repository/{ADB_ZIP_NAME}"
 
         if not download_file(google_url, adb_zip, "ADB from Google"):
-            log_error("✗ Failed to download ADB from all sources")
+            log_error("[FAIL] Failed to download ADB from all sources")
             return False
 
     # Extract ADB
     print()
-    log_info("📦 Extracting ADB archive...")
+    log_info("[PKG] Extracting ADB archive...")
 
     try:
         extract_dir = INSTALL_DIR / 'platform-tools-temp'
@@ -294,7 +294,7 @@ def install_adb():
         if not platform_tools_dir.exists():
             platform_tools_dir = extract_dir
 
-        log_info(f"📋 Copying files to {BIN_DIR}...")
+        log_info(f"[COPY] Copying files to {BIN_DIR}...")
 
         copied_count = 0
         for item in platform_tools_dir.iterdir():
@@ -317,13 +317,13 @@ def install_adb():
         log_info("  Cleaned up temporary files")
 
         print()
-        log_success(f"✓ ADB installed successfully to {BIN_DIR}")
+        log_success(f"[OK] ADB installed successfully to {BIN_DIR}")
         log_info(f"  Executable: {adb_path}")
         return True
 
     except Exception as e:
         print()
-        log_error(f"✗ Failed to extract ADB: {e}")
+        log_error(f"[FAIL] Failed to extract ADB: {e}")
         return False
 
 # ==============================================================================
@@ -334,7 +334,7 @@ def install_apk():
     """Download APK if not exists"""
     if APK_FILE.exists():
         file_size = APK_FILE.stat().st_size
-        log_info(f"✓ APK already exists: {APK_FILE} ({format_size(file_size)})")
+        log_info(f"[OK] APK already exists: {APK_FILE} ({format_size(file_size)})")
         return True
 
     print()
@@ -350,11 +350,11 @@ def install_apk():
 
     if download_file(APK_URL, APK_FILE, "ShellX APK"):
         print()
-        log_success(f"✓ APK downloaded successfully")
+        log_success(f"[OK] APK downloaded successfully")
         return True
     else:
         print()
-        log_error("✗ Failed to download APK")
+        log_error("[FAIL] Failed to download APK")
         return False
 
 # ==============================================================================
@@ -784,14 +784,14 @@ def run_service_menu_loop(device_id, daemon_mode=False, apk_already_installed=Tr
 
                 # Write deployment version
                 if write_device_deploy_version(device_id):
-                    log_info(f"📝 Deployment version {SCRIPT_VERSION} recorded on device")
+                    log_info(f"[NOTE] Deployment version {SCRIPT_VERSION} recorded on device")
 
                 # Open browser
                 print()
                 print("=" * 60)
                 open_browser(url, enable_browser=True)
                 print()
-                log_success(f"✓ Service reinstallation and startup completed!")
+                log_success(f"[OK] Service reinstallation and startup completed!")
                 print("=" * 60)
                 print()
 
@@ -839,14 +839,14 @@ def run_service_menu_loop(device_id, daemon_mode=False, apk_already_installed=Tr
 
                 # Write deployment version
                 if write_device_deploy_version(device_id):
-                    log_info(f"📝 Deployment version {SCRIPT_VERSION} recorded on device")
+                    log_info(f"[NOTE] Deployment version {SCRIPT_VERSION} recorded on device")
 
                 # Open browser
                 print()
                 print("=" * 60)
                 open_browser(url, enable_browser=True)
                 print()
-                log_success(f"✓ Service installation and startup completed!")
+                log_success(f"[OK] Service installation and startup completed!")
                 print("=" * 60)
                 print()
 
@@ -916,29 +916,29 @@ def execute_service_choice(device_id, choice):
 
 def install_apk_to_device(device_id):
     """Install APK to device"""
-    log_info(f"📲 [1/5] Installing APK to device {device_id}...")
+    log_info(f"[APK] [1/5] Installing APK to device {device_id}...")
     output = run_adb_command(['-s', device_id, 'install', '-r', str(APK_FILE)])
     if output and 'Success' in output:
-        log_success(f"✓ APK installed on device {device_id}")
+        log_success(f"[OK] APK installed on device {device_id}")
         return True
     else:
-        log_error(f"✗ Failed to install APK on device {device_id}")
+        log_error(f"[FAIL] Failed to install APK on device {device_id}")
         if output:
             log_error(f"  Output: {output}")
         return False
 
 def uninstall_apk_from_device(device_id):
     """Uninstall APK from device"""
-    log_info(f"🗑️  Uninstalling APK from device {device_id}...")
+    log_info(f"[DEL]  Uninstalling APK from device {device_id}...")
     output = run_adb_command(['-s', device_id, 'uninstall', 'com.toscl.shellx'])
     if output and 'Success' in output:
-        log_success(f"✓ APK uninstalled from device {device_id}")
+        log_success(f"[OK] APK uninstalled from device {device_id}")
         return True
     return False
 
 def start_main_activity(device_id):
     """Start MainActivity on device"""
-    log_info(f"🚀 [2/5] Starting MainActivity on device {device_id}...")
+    log_info(f"[START] [2/5] Starting MainActivity on device {device_id}...")
     run_adb_command(['-s', device_id, 'shell', 'am', 'start',
                      '-n', 'com.toscl.shellx/.MainActivity'])
     log_info("  Waiting 6 seconds for MainActivity to initialize...")
@@ -946,23 +946,39 @@ def start_main_activity(device_id):
         time.sleep(1)
         print(f"  {i+1}/6 seconds...", end='\r')
     print("                    ")  # Clear the line
-    log_success(f"✓ MainActivity started")
+    log_success(f"[OK] MainActivity started")
     return True
 
 def setup_port_forwarding(device_id):
     """Setup port forwarding for device"""
-    log_info(f"🔌 [3/5] Setting up port forwarding for device {device_id}...")
-    output = run_adb_command(['-s', device_id, 'forward', 'tcp:9091', 'tcp:9091'])
-    if output is not None:
-        log_success("✓ Port forwarding configured: localhost:9091 → device:9091")
+    log_info(f"[LINK] [3/5] Setting up port forwarding for device {device_id}...")
+
+    # Define ports to forward
+    port_mappings = [
+        ('9091', '9091'),  # Main service port
+        ('18789', '18789'),  # Additional port 1
+        ('18788', '18788'),  # Additional port 2
+    ]
+
+    all_success = True
+    for local_port, device_port in port_mappings:
+        output = run_adb_command(['-s', device_id, 'forward', f'tcp:{local_port}', f'tcp:{device_port}'])
+        if output is not None:
+            log_info(f"  [OK] Port forwarding configured: localhost:{local_port} → device:{device_port}")
+        else:
+            log_error(f"  [FAIL] Failed to setup port forwarding for localhost:{local_port}")
+            all_success = False
+
+    if all_success:
+        log_success("[OK] All port forwarding configured successfully")
         return True
     else:
-        log_error(f"✗ Failed to setup port forwarding for device {device_id}")
+        log_error(f"[FAIL] Some port forwarding failed for device {device_id}")
         return False
 
 def execute_shell_script(device_id):
     """Execute shell script and extract URL"""
-    log_info(f"📜 [4/5] Executing shell script on device {device_id}...")
+    log_info(f"[SCRIPT] [4/5] Executing shell script on device {device_id}...")
     log_info("  Waiting 3 seconds for service to be ready...")
     time.sleep(3)
 
@@ -975,7 +991,7 @@ def execute_shell_script(device_id):
         # Extract URL using string splitting
         for part in output.split():
             if part.startswith('http://') or part.startswith('https://'):
-                log_success(f"✓ Extracted URL: {part}")
+                log_success(f"[OK] Extracted URL: {part}")
                 return part
 
         # Try using -> as delimiter
@@ -983,22 +999,22 @@ def execute_shell_script(device_id):
             after_arrow = output.split('->', 1)[1]
             for part in after_arrow.split():
                 if part.startswith('http://') or part.startswith('https://'):
-                    log_success(f"✓ Extracted URL: {part}")
+                    log_success(f"[OK] Extracted URL: {part}")
                     return part
 
-    log_warning("✗ No URL found in shell script output")
+    log_warning("[FAIL] No URL found in shell script output")
     return None
 
 def stop_shell_script_on_device(device_id):
     """Stop shell script on device"""
-    log_info(f"🛑 Stopping shell script on device {device_id}...")
+    log_info(f"[STOP] Stopping shell script on device {device_id}...")
     run_adb_command(['-s', device_id, 'shell', 'sh',
                      '/sdcard/Android/data/com.toscl.shellx/shellx.sh',
                      '--stop'])
 
 def check_health_status():
     """Check health status via HTTP"""
-    log_info(f"🏥 [5/5] Checking health status...")
+    log_info(f"[HEALTH] [5/5] Checking health status...")
 
     start_time = time.time()
     timeout = 15  # Increased from 5 to 15 seconds
@@ -1015,7 +1031,7 @@ def check_health_status():
                     # Simple check for healthy status
                     if 'healthy' in data.lower() or '"status"' in data:
                         elapsed = time.time() - start_time
-                        log_success(f"✓ Health check passed (attempt {attempts}, {elapsed:.1f}s)")
+                        log_success(f"[OK] Health check passed (attempt {attempts}, {elapsed:.1f}s)")
                         return True
                     else:
                         log_info(f"  Response: {data[:100]}")
@@ -1027,7 +1043,7 @@ def check_health_status():
         time.sleep(0.5)
 
     elapsed = time.time() - start_time
-    log_error(f"✗ Health check timed out after {timeout:.0f}s ({attempts} attempts)")
+    log_error(f"[FAIL] Health check timed out after {timeout:.0f}s ({attempts} attempts)")
     if last_error:
         log_info(f"  Last error: {last_error}")
     return False
@@ -1035,16 +1051,16 @@ def check_health_status():
 def open_browser(url, enable_browser=True):
     """Open URL in browser"""
     if url and enable_browser:
-        log_info(f"🌐 Opening browser: {url}")
+        log_info(f"[WEB] Opening browser: {url}")
         time.sleep(3)
         try:
             import webbrowser
             webbrowser.open(url)
-            log_success("✓ Browser opened")
+            log_success("[OK] Browser opened")
         except Exception as e:
-            log_warning(f"⚠ Failed to open browser: {e}")
+            log_warning(f"[!] Failed to open browser: {e}")
     elif url:
-        log_info(f"📋 URL (browser disabled): {url}")
+        log_info(f"[COPY] URL (browser disabled): {url}")
 
 # ==============================================================================
 # Daemon Process
@@ -1098,8 +1114,8 @@ def run_daemon(enable_browser=True, daemon_mode=False):
     atexit.register(cleanup_pid)
 
     print()
-    log_info(f"📱 Using ADB: {get_adb_path()}")
-    log_info("⏳ Waiting for USB devices to connect...")
+    log_info(f"[Phone] Using ADB: {get_adb_path()}")
+    log_info("[WAIT] Waiting for USB devices to connect...")
     print()
 
     last_devices = set()
@@ -1119,12 +1135,12 @@ def run_daemon(enable_browser=True, daemon_mode=False):
             if new_devices:
                 for device_id in new_devices:
                     print()
-                    log_success(f"🔌 Device connected: {device_id}")
+                    log_success(f"[LINK] Device connected: {device_id}")
                     print("=" * 60)
 
             if disconnected_devices:
                 for device_id in disconnected_devices:
-                    log_warning(f"🔌 Device disconnected: {device_id}")
+                    log_warning(f"[LINK] Device disconnected: {device_id}")
                     # Remove from processed_devices so reconnect shows menu again
                     processed_devices.discard(device_id)
 
@@ -1138,15 +1154,15 @@ def run_daemon(enable_browser=True, daemon_mode=False):
                 is_retry = device_id in failed_devices
                 if is_retry:
                     print()
-                    log_warning(f"🔄 Retrying device: {device_id}")
+                    log_warning(f"[RETRY] Retrying device: {device_id}")
                     print("=" * 60)
                 else:
-                    log_info(f"📱 Processing device: {device_id}")
+                    log_info(f"[Phone] Processing device: {device_id}")
                     print("=" * 60)
 
                 # Check version for new devices (not retries)
                 if not is_retry and device_id not in checked_devices:
-                    log_info(f"🔍 Checking deployment version...")
+                    log_info(f"[SEARCH] Checking deployment version...")
                     if not check_device_version_update(device_id, daemon_mode=daemon_mode):
                         log_info(f"  Skipping device {device_id}")
                         checked_devices.add(device_id)  # Mark as checked so we don't prompt again
@@ -1173,38 +1189,38 @@ def run_daemon(enable_browser=True, daemon_mode=False):
                 if not is_retry and not apk_installed:
                     if not install_apk_to_device(device_id):
                         failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
-                        log_error(f"✗ Will retry in 10 seconds")
+                        log_error(f"[FAIL] Will retry in 10 seconds")
                         continue
                 elif is_retry:
                     # For retry attempts, always try to install
                     if not install_apk_to_device(device_id):
                         failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
-                        log_error(f"✗ Will retry in 10 seconds")
+                        log_error(f"[FAIL] Will retry in 10 seconds")
                         continue
 
                 # Start MainActivity
                 if not start_main_activity(device_id):
                     failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
-                    log_error(f"✗ Will retry in 10 seconds")
+                    log_error(f"[FAIL] Will retry in 10 seconds")
                     continue
 
                 # Setup port forwarding
                 if not setup_port_forwarding(device_id):
                     failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
-                    log_error(f"✗ Will retry in 10 seconds")
+                    log_error(f"[FAIL] Will retry in 10 seconds")
                     continue
 
                 # Execute shell script
                 url = execute_shell_script(device_id)
                 if not url:
                     failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
-                    log_error(f"✗ Will retry in 10 seconds")
+                    log_error(f"[FAIL] Will retry in 10 seconds")
                     continue
 
                 # Health check
                 if not check_health_status():
-                    log_warning(f"⚠ Health check failed for device {device_id}")
-                    log_info("🗑️  Uninstalling APK and will retry in 10 seconds...")
+                    log_warning(f"[!] Health check failed for device {device_id}")
+                    log_info("[DEL]  Uninstalling APK and will retry in 10 seconds...")
                     stop_shell_script_on_device(device_id)
                     uninstall_apk_from_device(device_id)
                     failed_devices[device_id] = datetime.now() + timedelta(seconds=10)
@@ -1212,9 +1228,9 @@ def run_daemon(enable_browser=True, daemon_mode=False):
 
                 # Write deployment version to device
                 if write_device_deploy_version(device_id):
-                    log_info(f"📝 Deployment version {SCRIPT_VERSION} recorded on device")
+                    log_info(f"[NOTE] Deployment version {SCRIPT_VERSION} recorded on device")
                 else:
-                    log_warning(f"⚠ Failed to write deployment version to device")
+                    log_warning(f"[!] Failed to write deployment version to device")
 
                 # Open browser
                 print()
@@ -1222,7 +1238,7 @@ def run_daemon(enable_browser=True, daemon_mode=False):
                 open_browser(url, enable_browser=enable_browser)
                 failed_devices.pop(device_id, None)
                 print()
-                log_success(f"✓ Device {device_id} processing complete!")
+                log_success(f"[OK] Device {device_id} processing complete!")
                 print("=" * 60)
                 print()
 
@@ -1325,7 +1341,7 @@ Examples:
     print("=" * 60)
     print(f"    {PROJECT_NAME} v{SCRIPT_VERSION} - https://shellx.ai")
     print("    USB Device Auto-Deployment Daemon")
-    print(f" 🚀  Please ensure your Android device is connected & USB debugging Authorized  🚀 ")
+    print(f" [START]  Please ensure your Android device is connected & USB debugging Authorized  [START] ")
     print("=" * 60)
     print()
 
@@ -1349,26 +1365,26 @@ Examples:
         setup_logging(daemon_mode=False)
 
     # Installation checks
-#     log_info("🔍 Checking requirements...")
+#     log_info("[SEARCH] Checking requirements...")
 
     # Check Python version
 #     if sys.version_info < (3, 6):
-#         log_error("✗ Python 3.6 or higher is required")
+#         log_error("[FAIL] Python 3.6 or higher is required")
 #         sys.exit(1)
 #
 #     py_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
 #     log_info(f"  Python version: {py_version}")
-#     log_success("✓ All requirements satisfied")
+#     log_success("[OK] All requirements satisfied")
 #     print()
 
     # Install ADB
     if not install_adb():
-        log_error("✗ ADB installation failed")
+        log_error("[FAIL] ADB installation failed")
         sys.exit(1)
 
     # Download APK
     if not install_apk():
-        log_error("✗ APK download failed")
+        log_error("[FAIL] APK download failed")
         sys.exit(1)
 
     # Create version file
@@ -1382,7 +1398,7 @@ Examples:
 
     # Run daemon
     if args.daemon:
-        log_info("🚀 Starting ShellX daemon in background...")
+        log_info("[START] Starting ShellX daemon in background...")
         if not is_windows():
             daemonize()
         else:
@@ -1399,7 +1415,7 @@ Examples:
         setup_logging(daemon_mode=True)
     else:
         print()
-        log_info("🚀 Starting ShellX daemon in foreground...")
+        log_info("[START] Starting ShellX daemon in foreground...")
         print("  Press Ctrl+C to stop")
         print()
         write_pid()
