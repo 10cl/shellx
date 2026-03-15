@@ -133,8 +133,14 @@ def download_file(url, dest_path, description="File"):
     log_info(f"Downloading {description} from: {url}")
 
     try:
+        # Create SSL context that doesn't verify certificate (for self-signed certs)
+        import ssl
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
         req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urlopen(req, timeout=120) as response:
+        with urlopen(req, timeout=120, context=ssl_context) as response:
             total_size = response.getheader('Content-Length')
             if total_size:
                 total_size = int(total_size)
