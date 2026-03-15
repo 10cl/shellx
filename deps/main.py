@@ -71,6 +71,9 @@ daemon_running = True
 
 def setup_logging(daemon_mode=False):
     """Configure logging"""
+    # Ensure log directory exists
+    INSTALL_DIR.mkdir(parents=True, exist_ok=True)
+
     log_format = '%(asctime)s - %(levelname)s - %(message)s'
     handlers = [
         logging.FileHandler(LOG_FILE, encoding='utf-8')
