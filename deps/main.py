@@ -1112,19 +1112,35 @@ def daemonize():
     atexit.register(cleanup_pid)
 
 def run_daemon(enable_browser=True, daemon_mode=False):
-    """Main daemon loop"""
+    """Main daemon loop
+
+    Args:
+        enable_browser: Whether to auto-open browser
+        daemon_mode: If True, run as background daemon with PID file management;
+                     If False, run in foreground as a normal terminal process
+    """
     global daemon_running
 
     logger = logging.getLogger(__name__)
-    logger.info("ShellX daemon started")
 
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-    atexit.register(cleanup_pid)
+    if daemon_mode:
+        logger.info("ShellX daemon started")
+        # Daemon mode: register signal handlers and cleanup
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        atexit.register(cleanup_pid)
+    else:
+        # Foreground mode: simple Ctrl+C handling
+        signal.signal(signal.SIGINT, signal_handler)
+        if not is_windows():
+            signal.signal(signal.SIGTERM, signal_handler)
 
     print()
     log_info(f"[Phone] Using ADB: {get_adb_path()}")
-    log_info("[WAIT] Waiting for USB devices to connect...")
+    if daemon_mode:
+        log_info("[WAIT] Waiting for USB devices to connect...")
+    else:
+        log_info("[WAIT] Waiting for USB devices to connect... (Press Ctrl+C to exit)")
     print()
 
     last_devices = set()
@@ -1269,7 +1285,11 @@ def run_daemon(enable_browser=True, daemon_mode=False):
             time.sleep(1)
 
     logger.info("Daemon exiting")
-    cleanup_pid()
+    if daemon_mode:
+        cleanup_pid()
+    else:
+        print()
+        log_info("Foreground mode ended")
 
 # ==============================================================================
 # Main Entry Point
@@ -1402,15 +1422,20 @@ Examples:
     # Add to PATH
     add_to_path()
 
-    # Kill existing instance
-    kill_existing_instance()
-
     # Run daemon
     if args.daemon:
+        # Daemon mode: background process with PID file management
         log_info("[START] Starting ShellX daemon in background...")
+        print()
+
+        # Kill existing daemon instance
+        kill_existing_instance()
+
+        # Daemonize on Unix-like systems
         if not is_windows():
             daemonize()
         else:
+            # Windows: hide console window
             try:
                 import ctypes
                 kernel32 = ctypes.WinDLL('kernel32')
@@ -1420,14 +1445,15 @@ Examples:
                     user32.ShowWindow(hwnd, 0)  # SW_HIDE
             except Exception:
                 pass
+
+        # Write PID file for daemon mode
         write_pid()
         setup_logging(daemon_mode=True)
     else:
+        # Foreground mode: run in current terminal
         print()
-        log_info("[START] Starting ShellX daemon in foreground...")
-        print("  Press Ctrl+C to stop")
-        print()
-        write_pid()
+        log_info("[START] Starting ShellX in foreground mode...")
+        print("  This terminal will show all logs and output")
 
     run_daemon(enable_browser=(not args.no_browser), daemon_mode=args.daemon)
 
