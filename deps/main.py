@@ -26,7 +26,7 @@ from urllib.error import URLError, HTTPError
 # Configuration
 # ==============================================================================
 
-SCRIPT_VERSION = "1.0.0"
+SCRIPT_VERSION = "1.0.1"
 PROJECT_NAME = "ShellX"
 
 # Get installation directory
@@ -340,7 +340,19 @@ def install_adb():
 # ==============================================================================
 
 def install_apk():
-    """Download APK if not exists"""
+    """Download APK if not exists or version changed"""
+    installed_version = get_installed_version()
+
+    # Check if version changed - if so, delete old APK and redownload
+    if APK_FILE.exists() and installed_version and installed_version != SCRIPT_VERSION:
+        log_info(f"[UPDATE] Script version changed from {installed_version} to {SCRIPT_VERSION}")
+        log_info(f"[UPDATE] Deleting old APK for update...")
+        try:
+            APK_FILE.unlink()
+            log_success(f"[OK] Old APK removed")
+        except Exception as e:
+            log_warning(f"[!] Could not remove old APK: {e}")
+
     if APK_FILE.exists():
         file_size = APK_FILE.stat().st_size
         log_info(f"[OK] APK already exists: {APK_FILE} ({format_size(file_size)})")
